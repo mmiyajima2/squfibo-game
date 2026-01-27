@@ -31,6 +31,14 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
   switch (action.type) {
     case 'PLACE_CARD': {
       const currentPlayer = game.getCurrentPlayer();
+
+      // カードが手札にあるかチェック（React Strict Modeでの2重実行対策）
+      const cardInHand = currentPlayer.hand.getCards().find(c => c.id === action.card.id);
+      if (!cardInHand) {
+        // 既に配置済みの場合はスキップ
+        return state;
+      }
+
       const playedCard = currentPlayer.playCard(action.card);
       game.placeCard(playedCard, action.position);
       return { ...state, version: state.version + 1 };
@@ -47,6 +55,10 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
     }
 
     case 'DISCARD_FROM_BOARD': {
+      // 既に空の場合はスキップ（React Strict Modeでの2重実行対策）
+      if (game.board.isEmpty(action.position)) {
+        return state;
+      }
       game.discardFromBoard(action.position);
       return { ...state, version: state.version + 1 };
     }

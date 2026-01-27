@@ -14,7 +14,7 @@ import './GameContainer.css';
 
 export function GameContainer() {
   const { game, placeCardFromHand, endTurn, resetGame } = useGameState();
-  const { selectedCard, selectCard, highlightedPositions, clearHighlight } = useUIState();
+  const { selectedCard, selectCard, highlightedPositions, highlightPositions, clearHighlight, errorMessage, showError, clearError } = useUIState();
   const { messages, currentMessage, addMessage, updateCurrent, clearMessages } = useCommentary();
 
   const currentPlayer = game.getCurrentPlayer();
@@ -26,31 +26,77 @@ export function GameContainer() {
     updateCurrent('あなたのターンです');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // エラーメッセージを3秒後に自動的にクリア
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage, clearError]);
+
   const handleCardSelect = (card: Card) => {
     if (!isPlayer1Turn) return;
 
     if (selectedCard?.equals(card)) {
       selectCard(null);
+      clearHighlight();
     } else {
-      selectCard(card);
+      // 手札から同じIDのカードを探す
+      const cardInHand = player1.hand.getCards().find(c => c.id === card.id);
+      if (cardInHand) {
+        selectCard(cardInHand);
+        // 配置可能なセル（空のセル）をハイライト表示
+        const emptyPositions: Position[] = [];
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 3; col++) {
+            const pos = Position.of(row, col);
+            if (game.board.isEmpty(pos)) {
+              emptyPositions.push(pos);
+            }
+          }
+        }
+        highlightPositions(emptyPositions);
+      }
     }
   };
 
   const handleCellClick = (position: Position) => {
-    if (!isPlayer1Turn) return;
-    if (!selectedCard) return;
-    if (!game.board.isEmpty(position)) return;
+    if (!isPlayer1Turn) {
+      showError('あなたのターンではありません');
+      return;
+    }
+    if (!selectedCard) {
+      showError('手札からカードを選択してください');
+      return;
+    }
+    if (!game.board.isEmpty(position)) {
+      showError('そのマスには既にカードが配置されています');
+      return;
+    }
 
     try {
       const cardColor = selectedCard.color === CardColor.RED ? '赤' : '青';
       const cardValue = selectedCard.value.value;
 
-      placeCardFromHand(selectedCard, position);
+      // 現在の手札から選択されたカードと同じIDのカードを探す
+      const currentHand = game.getCurrentPlayer().hand.getCards();
+      const cardToPlay = currentHand.find(c => c.id === selectedCard.id);
+
+      if (!cardToPlay) {
+        showError('選択されたカードが手札に見つかりません');
+        return;
+      }
+
+      placeCardFromHand(cardToPlay, position);
       addMessage(CommentaryBuilder.playerPlacedCard(cardColor, cardValue));
       selectCard(null);
       clearHighlight();
+      clearError();
     } catch (error) {
       console.error('Failed to place card:', error);
+      showError('カードの配置に失敗しました');
     }
   };
 
@@ -124,6 +170,11 @@ export function GameContainer() {
             {selectedCard && (
               <div className="selected-card-info">
                 選択中: {selectedCard.color} {selectedCard.value.value}
+              </div>
+            )}
+            {errorMessage && (
+              <div className="error-message">
+                {errorMessage}
               </div>
             )}
           </div>

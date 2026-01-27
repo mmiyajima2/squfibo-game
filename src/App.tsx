@@ -1,8 +1,13 @@
 import { GameContainer } from './components/Game/GameContainer'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import './App.css'
 
 function App() {
-  return <GameContainer />
+  return (
+    <ErrorBoundary>
+      <GameContainer />
+    </ErrorBoundary>
+  )
 }
 
 export default App
