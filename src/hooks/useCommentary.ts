@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { CommentaryMessage } from '../types/Commentary';
 
-const MAX_MESSAGES = 20;
+const MAX_MESSAGES = 3;
 
 export function useCommentary() {
   const [messages, setMessages] = useState<CommentaryMessage[]>([]);
