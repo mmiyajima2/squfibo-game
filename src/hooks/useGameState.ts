@@ -10,6 +10,8 @@ interface GameStateHook {
   claimCombo: (combo: Combo) => boolean;
   endTurn: () => void;
   discardFromBoard: (position: Position) => void;
+  discardFromHand: (card: Card) => void;
+  drawAndPlaceCard: (position: Position) => Card | null;
   resetGame: () => void;
 }
 
@@ -18,6 +20,8 @@ type GameAction =
   | { type: 'CLAIM_COMBO'; combo: Combo }
   | { type: 'END_TURN' }
   | { type: 'DISCARD_FROM_BOARD'; position: Position }
+  | { type: 'DISCARD_FROM_HAND'; card: Card }
+  | { type: 'DRAW_AND_PLACE'; position: Position }
   | { type: 'RESET_GAME' };
 
 interface GameStateWrapper {
@@ -63,6 +67,27 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       return { ...state, version: state.version + 1 };
     }
 
+    case 'DISCARD_FROM_HAND': {
+      const currentPlayer = game.getCurrentPlayer();
+      // カードが手札にあるかチェック（React Strict Modeでの2重実行対策）
+      const cardInHand = currentPlayer.hand.getCards().find(c => c.id === action.card.id);
+      if (!cardInHand) {
+        // 既に廃棄済みの場合はスキップ
+        return state;
+      }
+      game.discardFromHand(action.card);
+      return { ...state, version: state.version + 1 };
+    }
+
+    case 'DRAW_AND_PLACE': {
+      // 既にカードがある場合はスキップ（React Strict Modeでの2重実行対策）
+      if (!game.board.isEmpty(action.position)) {
+        return state;
+      }
+      game.drawAndPlaceCard(action.position);
+      return { ...state, version: state.version + 1 };
+    }
+
     case 'RESET_GAME': {
       return { game: Game.createNewGame(), version: 0 };
     }
@@ -104,6 +129,22 @@ export function useGameState(): GameStateHook {
     dispatch({ type: 'DISCARD_FROM_BOARD', position });
   }, []);
 
+  const discardFromHand = useCallback((card: Card) => {
+    dispatch({ type: 'DISCARD_FROM_HAND', card });
+  }, []);
+
+  const drawAndPlaceCard = useCallback((position: Position): Card | null => {
+    try {
+      dispatch({ type: 'DRAW_AND_PLACE', position });
+      // 注: Reducerの後に状態が更新されるため、ここでは正確なカードを返せない
+      // 必要に応じて、stateから取得する必要がある
+      return null;
+    } catch (error) {
+      console.error('Failed to draw and place card:', error);
+      return null;
+    }
+  }, []);
+
   const resetGame = useCallback(() => {
     dispatch({ type: 'RESET_GAME' });
   }, []);
@@ -114,6 +155,8 @@ export function useGameState(): GameStateHook {
     claimCombo,
     endTurn,
     discardFromBoard,
+    discardFromHand,
+    drawAndPlaceCard,
     resetGame,
   };
 }

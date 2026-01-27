@@ -6,6 +6,8 @@ interface HandAreaProps {
   cards: Card[];
   selectedCard: Card | null;
   onCardClick?: (card: Card) => void;
+  onDeleteCard?: (card: Card) => void;
+  showDeleteIcons?: boolean;
   label?: string;
   isOpponent?: boolean;
 }
@@ -14,12 +16,20 @@ export function HandArea({
   cards,
   selectedCard,
   onCardClick,
+  onDeleteCard,
+  showDeleteIcons = false,
   label,
   isOpponent = false,
 }: HandAreaProps) {
   const handleCardClick = (card: Card) => {
     if (onCardClick && !isOpponent) {
       onCardClick(card);
+    }
+  };
+
+  const handleDeleteCard = (card: Card) => {
+    if (onDeleteCard) {
+      onDeleteCard(card);
     }
   };
 
@@ -37,6 +47,8 @@ export function HandArea({
                 size="small"
                 isSelected={selectedCard?.equals(card)}
                 onClick={() => handleCardClick(card)}
+                showDeleteIcon={showDeleteIcons}
+                onDelete={handleDeleteCard}
               />
             </div>
           ))

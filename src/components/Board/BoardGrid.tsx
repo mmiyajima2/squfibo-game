@@ -10,6 +10,8 @@ interface BoardGridProps {
   selectedCards?: Card[];
   onCellClick?: (position: Position) => void;
   onCardClick?: (card: Card) => void;
+  showDeleteIcons?: boolean;
+  onDeleteCard?: (position: Position) => void;
 }
 
 export function BoardGrid({
@@ -18,6 +20,8 @@ export function BoardGrid({
   selectedCards = [],
   onCellClick,
   onCardClick,
+  showDeleteIcons = false,
+  onDeleteCard,
 }: BoardGridProps) {
   const isHighlighted = (position: Position): boolean => {
     return highlightedPositions.some((p) => p.equals(position));
@@ -50,6 +54,8 @@ export function BoardGrid({
                 isSelected={isSelected(card)}
                 onClick={() => handleCellClick(position)}
                 onCardClick={onCardClick}
+                showDeleteIcon={showDeleteIcons && card !== null}
+                onDeleteCard={onDeleteCard}
               />
             );
           })}

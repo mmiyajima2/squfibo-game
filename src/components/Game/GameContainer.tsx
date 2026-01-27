@@ -15,7 +15,7 @@ import { CommentaryBuilder } from '../../types/Commentary';
 import './GameContainer.css';
 
 export function GameContainer() {
-  const { game, placeCardFromHand, claimCombo, endTurn, resetGame } = useGameState();
+  const { game, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame } = useGameState();
   const {
     selectedCard,
     selectCard,
@@ -77,17 +77,71 @@ export function GameContainer() {
     }
   };
 
+  const handleDeleteBoardCard = (position: Position) => {
+    if (!isPlayer1Turn) {
+      showError('あなたのターンではありません');
+      return;
+    }
+
+    const card = game.board.getCard(position);
+    if (!card) {
+      showError('そのマスにはカードがありません');
+      return;
+    }
+
+    const cardColor = card.color === CardColor.RED ? '赤' : '青';
+    const cardValue = card.value.value;
+
+    const confirmed = window.confirm(`盤面の${cardColor}${cardValue} を捨てますか？`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      discardFromBoard(position);
+      addMessage(CommentaryBuilder.createMessage('discard', '🗑️', `盤面の${cardColor}${cardValue}を廃棄しました`));
+
+      clearError();
+    } catch (error) {
+      console.error('Failed to discard card from board:', error);
+      showError('カードの廃棄に失敗しました');
+    }
+  };
+
   const handleCellClick = (position: Position) => {
     if (!isPlayer1Turn) {
       showError('あなたのターンではありません');
       return;
     }
-    if (!selectedCard) {
-      showError('手札からカードを選択してください');
-      return;
-    }
     if (!game.board.isEmpty(position)) {
       showError('そのマスには既にカードが配置されています');
+      return;
+    }
+
+    const currentPlayer = game.getCurrentPlayer();
+    const hasHandCards = currentPlayer.hand.hasCards();
+
+    // 手札が0枚の場合、山札から直接引いて配置
+    if (!hasHandCards) {
+      if (game.deck.isEmpty()) {
+        showError('山札が空です');
+        return;
+      }
+
+      try {
+        drawAndPlaceCard(position);
+        addMessage(CommentaryBuilder.createMessage('draw', '🎴', '山札から直接カードを配置しました'));
+        clearError();
+      } catch (error) {
+        console.error('Failed to draw and place card:', error);
+        showError('山札からのカード配置に失敗しました');
+      }
+      return;
+    }
+
+    // 通常の配置処理（手札からカードを選択している場合）
+    if (!selectedCard) {
+      showError('手札からカードを選択してください');
       return;
     }
 
@@ -204,9 +258,39 @@ export function GameContainer() {
 
   const player1 = game.players[0];
   const player2 = game.players[1];
+  const isGameOver = game.isGameOver();
+  const winner = game.getWinner();
+  const isBoardFull = game.board.isFull();
 
   return (
     <div className="game-container">
+      {isGameOver && (
+        <div className="game-over-modal">
+          <div className="game-over-content">
+            <h2>ゲーム終了！</h2>
+            {winner ? (
+              <p className="winner-text">
+                {winner.id === 'player1' ? 'あなた' : 'CPU'}の勝ち！
+              </p>
+            ) : (
+              <p className="winner-text">引き分け！</p>
+            )}
+            <div className="final-scores">
+              <div className="score-item">
+                <span>あなた:</span>
+                <span className="score-value">★ {player1.stars}</span>
+              </div>
+              <div className="score-item">
+                <span>CPU:</span>
+                <span className="score-value">★ {player2.stars}</span>
+              </div>
+            </div>
+            <button className="new-game-button" onClick={handleResetGame}>
+              新しいゲーム
+            </button>
+          </div>
+        </div>
+      )}
       <div className="game-header">
         <h1 className="game-title">SquFibo（すくふぃぼ）</h1>
         <button className="reset-button" onClick={handleResetGame}>
@@ -233,6 +317,8 @@ export function GameContainer() {
               selectedCards={selectedBoardCards}
               onCellClick={handleCellClick}
               onCardClick={toggleBoardCardSelection}
+              showDeleteIcons={isBoardFull && isPlayer1Turn && !isGameOver}
+              onDeleteCard={handleDeleteBoardCard}
             />
             <CommentaryArea messages={messages} />
           </div>
@@ -250,17 +336,27 @@ export function GameContainer() {
             <button
               className="claim-combo-button"
               onClick={handleClaimCombo}
-              disabled={!isPlayer1Turn}
+              disabled={!isPlayer1Turn || isGameOver}
             >
               役を申告
             </button>
             <button
               className="end-turn-button"
               onClick={handleEndTurn}
-              disabled={!isPlayer1Turn}
+              disabled={!isPlayer1Turn || isGameOver}
             >
               ターン終了
             </button>
+            {isBoardFull && (
+              <div className="board-full-notice">
+                ⚠️ 盤面が満杯です。盤面のカードのゴミ箱アイコンをクリックして廃棄するか、役を申告してください。
+              </div>
+            )}
+            {!player1.hand.hasCards() && !game.deck.isEmpty() && (
+              <div className="no-hand-notice">
+                💡 手札がありません。空きマスをクリックすると山札から直接配置できます。
+              </div>
+            )}
             {selectedCard && (
               <div className="selected-card-info">
                 選択中: {selectedCard.color} {selectedCard.value.value}

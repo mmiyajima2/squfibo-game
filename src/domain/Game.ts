@@ -73,6 +73,36 @@ export class Game {
     }
   }
 
+  discardFromHand(card: Card): void {
+    if (this.gameState === GameState.FINISHED) {
+      throw new Error('Game is already finished');
+    }
+
+    const currentPlayer = this.getCurrentPlayer();
+    const discardedCard = currentPlayer.playCard(card);
+    this.discardPile.push(discardedCard);
+  }
+
+  drawAndPlaceCard(position: Position): Card | null {
+    if (this.gameState === GameState.FINISHED) {
+      throw new Error('Game is already finished');
+    }
+
+    if (!this.board.isEmpty(position)) {
+      throw new Error('Position is not empty');
+    }
+
+    if (this.deck.isEmpty()) {
+      throw new Error('Deck is empty');
+    }
+
+    const drawnCard = this.deck.draw();
+    if (drawnCard) {
+      this.board.placeCard(drawnCard, position);
+    }
+    return drawnCard;
+  }
+
   claimCombo(combo: Combo): boolean {
     if (this.gameState === GameState.FINISHED) {
       return false;
@@ -106,8 +136,17 @@ export class Game {
   }
 
   endTurn(): void {
+    // ゲーム終了判定
+    // 1. 全ての星が配布された
+    // 2. 山札が空
+    // 3. 盤面が満杯で、両プレイヤーとも手札がない（配置不可能）
     if (this.totalStars === 0 || this.deck.isEmpty()) {
       this.gameState = GameState.FINISHED;
+    } else if (this.board.isFull()) {
+      const bothPlayersOutOfCards = this.players.every(player => !player.hand.hasCards());
+      if (bothPlayersOutOfCards) {
+        this.gameState = GameState.FINISHED;
+      }
     }
 
     this.currentPlayerIndex = this.currentPlayerIndex === 0 ? 1 : 0;

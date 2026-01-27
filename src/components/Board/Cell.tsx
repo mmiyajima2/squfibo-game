@@ -10,14 +10,31 @@ interface CellProps {
   isSelected?: boolean;
   onClick?: () => void;
   onCardClick?: (card: Card) => void;
+  showDeleteIcon?: boolean;
+  onDeleteCard?: (position: Position) => void;
 }
 
-export function Cell({ position, card, isHighlighted = false, isSelected = false, onClick, onCardClick }: CellProps) {
+export function Cell({
+  position,
+  card,
+  isHighlighted = false,
+  isSelected = false,
+  onClick,
+  onCardClick,
+  showDeleteIcon = false,
+  onDeleteCard,
+}: CellProps) {
   const handleClick = () => {
     if (card && onCardClick) {
       onCardClick(card);
     } else if (!card && onClick) {
       onClick();
+    }
+  };
+
+  const handleDeleteCard = (_cardToDelete: Card) => {
+    if (onDeleteCard) {
+      onDeleteCard(position);
     }
   };
 
@@ -33,7 +50,12 @@ export function Cell({ position, card, isHighlighted = false, isSelected = false
   return (
     <div className={classNames} onClick={handleClick} data-position={`${position.row}-${position.col}`}>
       {card ? (
-        <CardComponent card={card} size="large" />
+        <CardComponent
+          card={card}
+          size="large"
+          showDeleteIcon={showDeleteIcon}
+          onDelete={handleDeleteCard}
+        />
       ) : (
         <div className="cell-empty">
           <div className="cell-empty-indicator" />

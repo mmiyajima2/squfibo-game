@@ -8,6 +8,8 @@ interface CardComponentProps {
   isHighlighted?: boolean;
   onClick?: () => void;
   size?: 'small' | 'medium' | 'large';
+  showDeleteIcon?: boolean;
+  onDelete?: (card: Card) => void;
 }
 
 export function CardComponent({
@@ -16,6 +18,8 @@ export function CardComponent({
   isHighlighted = false,
   onClick,
   size = 'medium',
+  showDeleteIcon = false,
+  onDelete,
 }: CardComponentProps) {
   const colorName = card.color === CardColor.RED ? 'red' : 'blue';
   const imagePath = `/cards/${colorName}-${card.value.value}.svg`;
@@ -26,9 +30,17 @@ export function CardComponent({
     isSelected ? 'card-selected' : '',
     isHighlighted ? 'card-highlighted' : '',
     onClick ? 'card-clickable' : '',
+    showDeleteIcon ? 'card-with-delete' : '',
   ]
     .filter(Boolean)
     .join(' ');
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(card);
+    }
+  };
 
   return (
     <div className={classNames} onClick={onClick}>
@@ -37,6 +49,15 @@ export function CardComponent({
         alt={`${colorName} ${card.value.value}`}
         className="card-image"
       />
+      {showDeleteIcon && (
+        <button
+          className="card-delete-icon"
+          onClick={handleDeleteClick}
+          aria-label="カードを廃棄"
+        >
+          🗑️
+        </button>
+      )}
     </div>
   );
 }

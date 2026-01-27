@@ -352,4 +352,135 @@ describe('Game', () => {
       expect(game.getCurrentPlayer()).toBe(game.players[1]);
     });
   });
+
+  describe('discardFromHand', () => {
+    it('should discard a card from current player hand', () => {
+      const currentPlayer = game.getCurrentPlayer();
+      const card = currentPlayer.hand.getCards()[0];
+      const initialHandCount = currentPlayer.hand.getCardCount();
+      const initialDiscardPileCount = game.getDiscardPileCount();
+
+      game.discardFromHand(card);
+
+      expect(currentPlayer.hand.getCardCount()).toBe(initialHandCount - 1);
+      expect(game.getDiscardPileCount()).toBe(initialDiscardPileCount + 1);
+    });
+
+    it('should throw error if game is finished', () => {
+      // ゲームを終了状態にする
+      while (!game.deck.isEmpty()) {
+        game.deck.draw();
+      }
+      game.endTurn();
+
+      const card = game.getCurrentPlayer().hand.getCards()[0];
+      expect(() => game.discardFromHand(card)).toThrow('Game is already finished');
+    });
+  });
+
+  describe('drawAndPlaceCard', () => {
+    it('should draw from deck and place on board', () => {
+      const position = Position.of(0, 0);
+      const initialDeckCount = game.deck.getCardCount();
+
+      const drawnCard = game.drawAndPlaceCard(position);
+
+      expect(drawnCard).not.toBeNull();
+      expect(game.board.isEmpty(position)).toBe(false);
+      expect(game.deck.getCardCount()).toBe(initialDeckCount - 1);
+      expect(game.board.getCard(position)).toBe(drawnCard);
+    });
+
+    it('should throw error if position is not empty', () => {
+      const position = Position.of(0, 0);
+      const card = game.getCurrentPlayer().hand.getCards()[0];
+
+      game.getCurrentPlayer().playCard(card);
+      game.placeCard(card, position);
+
+      expect(() => game.drawAndPlaceCard(position)).toThrow('Position is not empty');
+    });
+
+    it('should throw error if deck is empty', () => {
+      const position = Position.of(0, 0);
+      while (!game.deck.isEmpty()) {
+        game.deck.draw();
+      }
+
+      expect(() => game.drawAndPlaceCard(position)).toThrow('Deck is empty');
+    });
+
+    it('should throw error if game is finished', () => {
+      while (!game.deck.isEmpty()) {
+        game.deck.draw();
+      }
+      game.endTurn();
+
+      const position = Position.of(0, 0);
+      expect(() => game.drawAndPlaceCard(position)).toThrow('Game is already finished');
+    });
+  });
+
+  describe('endTurn - board full game over', () => {
+    it('should end game when board is full and both players have no hand cards', () => {
+      // 両プレイヤーの手札を全て使い切る
+      const player1 = game.players[0];
+      const player2 = game.players[1];
+
+      while (player1.hand.hasCards()) {
+        const card = player1.hand.getCards()[0];
+        player1.playCard(card);
+      }
+
+      while (player2.hand.hasCards()) {
+        const card = player2.hand.getCards()[0];
+        player2.playCard(card);
+      }
+
+      // 盤面を満杯にする
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const position = Position.of(row, col);
+          const card = new Card(
+            CardValue.of(1),
+            CardColor.RED,
+            `test-card-${row}-${col}`
+          );
+          game.board.placeCard(card, position);
+        }
+      }
+
+      expect(game.board.isFull()).toBe(true);
+      expect(player1.hand.hasCards()).toBe(false);
+      expect(player2.hand.hasCards()).toBe(false);
+
+      game.endTurn();
+
+      expect(game.isGameOver()).toBe(true);
+      expect(game.getGameState()).toBe(GameState.FINISHED);
+    });
+
+    it('should not end game when board is full but players still have cards', () => {
+      // 盤面を満杯にする
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const position = Position.of(row, col);
+          const card = new Card(
+            CardValue.of(1),
+            CardColor.RED,
+            `test-card-${row}-${col}`
+          );
+          game.board.placeCard(card, position);
+        }
+      }
+
+      expect(game.board.isFull()).toBe(true);
+      expect(game.players[0].hand.hasCards()).toBe(true);
+
+      game.endTurn();
+
+      // まだ手札があるのでゲームは終了しない
+      expect(game.isGameOver()).toBe(false);
+    });
+  });
 });
