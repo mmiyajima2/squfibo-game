@@ -14,17 +14,17 @@
 
 .card-size-small {
   width: 60px;
-  height: 84px;
+  height: 60px;
 }
 
 .card-size-medium {
   width: 80px;
-  height: 112px;
+  height: 80px;
 }
 
 .card-size-large {
-  width: 100px;
-  height: 140px;
+  width: 90px;
+  height: 90px;
 }
 
 .card-clickable {

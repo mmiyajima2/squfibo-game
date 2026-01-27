@@ -1,23 +1,23 @@
 .hand-area {
-  padding: 16px;
+  padding: 8px 12px;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  min-height: 120px;
+  min-height: 80px;
 }
 
 .hand-area-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #475569;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .hand-cards {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  min-height: 84px;
+  min-height: 60px;
   align-items: center;
 }
 

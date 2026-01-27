@@ -1,19 +1,30 @@
+import { useEffect } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useUIState } from '../../hooks/useUIState';
+import { useCommentary } from '../../hooks/useCommentary';
 import { Position } from '../../domain/valueObjects/Position';
 import { Card } from '../../domain/entities/Card';
+import { CardColor } from '../../domain/valueObjects/CardColor';
 import { BoardGrid } from '../Board/BoardGrid';
 import { HandArea } from '../Hand/HandArea';
 import { GameStatus } from './GameStatus';
+import { CommentaryArea } from '../Commentary/CommentaryArea';
+import { CommentaryBuilder } from '../../types/Commentary';
 import './GameContainer.css';
 
 export function GameContainer() {
   const { game, placeCardFromHand, endTurn, resetGame } = useGameState();
   const { selectedCard, selectCard, highlightedPositions, clearHighlight } = useUIState();
+  const { messages, currentMessage, addMessage, updateCurrent, clearMessages } = useCommentary();
 
   const currentPlayer = game.getCurrentPlayer();
-  const opponent = game.getOpponent();
   const isPlayer1Turn = currentPlayer.id === 'player1';
+
+  // 初回レンダリング時にゲーム開始メッセージを表示
+  useEffect(() => {
+    addMessage(CommentaryBuilder.gameStart());
+    updateCurrent('あなたのターンです');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCardSelect = (card: Card) => {
     if (!isPlayer1Turn) return;
@@ -31,7 +42,11 @@ export function GameContainer() {
     if (!game.board.isEmpty(position)) return;
 
     try {
+      const cardColor = selectedCard.color === CardColor.RED ? '赤' : '青';
+      const cardValue = selectedCard.value.value;
+
       placeCardFromHand(selectedCard, position);
+      addMessage(CommentaryBuilder.playerPlacedCard(cardColor, cardValue));
       selectCard(null);
       clearHighlight();
     } catch (error) {
@@ -42,11 +57,16 @@ export function GameContainer() {
   const handleEndTurn = () => {
     if (!isPlayer1Turn) return;
     endTurn();
+    addMessage(CommentaryBuilder.cpuTurn());
+    updateCurrent('CPUのターンです');
     selectCard(null);
   };
 
   const handleResetGame = () => {
     resetGame();
+    clearMessages();
+    addMessage(CommentaryBuilder.gameStart());
+    updateCurrent('あなたのターンです');
     selectCard(null);
     clearHighlight();
   };
@@ -74,13 +94,14 @@ export function GameContainer() {
         </div>
 
         <div className="game-middle">
-          <div className="status-board-container">
+          <div className="status-board-commentary-container">
             <GameStatus game={game} />
             <BoardGrid
               board={game.board}
               highlightedPositions={highlightedPositions}
               onCellClick={handleCellClick}
             />
+            <CommentaryArea messages={messages} currentMessage={currentMessage} />
           </div>
         </div>
 
