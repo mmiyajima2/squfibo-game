@@ -22,7 +22,7 @@ export function Cell({ position, card, isHighlighted = false, onClick }: CellPro
   return (
     <div className={classNames} onClick={onClick} data-position={`${position.row}-${position.col}`}>
       {card ? (
-        <CardComponent card={card} size="medium" />
+        <CardComponent card={card} size="large" />
       ) : (
         <div className="cell-empty">
           <div className="cell-empty-indicator" />
