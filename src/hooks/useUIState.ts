@@ -6,6 +6,8 @@ import { Combo } from '../domain/services/Combo';
 interface UIState {
   // 選択中のカード（手札から選択）
   selectedCard: Card | null;
+  // 選択中の盤面カード（役申告用）
+  selectedBoardCards: Card[];
   // ハイライト表示するセルの位置
   highlightedPositions: Position[];
   // 役申告モード
@@ -24,6 +26,8 @@ interface UIState {
 
 interface UIStateHook extends UIState {
   selectCard: (card: Card | null) => void;
+  toggleBoardCardSelection: (card: Card) => void;
+  clearBoardCardSelection: () => void;
   highlightPositions: (positions: Position[]) => void;
   clearHighlight: () => void;
   activateComboClaimMode: (combos: Combo[]) => void;
@@ -37,6 +41,8 @@ interface UIStateHook extends UIState {
 
 type UIAction =
   | { type: 'SELECT_CARD'; card: Card | null }
+  | { type: 'TOGGLE_BOARD_CARD_SELECTION'; card: Card }
+  | { type: 'CLEAR_BOARD_CARD_SELECTION' }
   | { type: 'HIGHLIGHT_POSITIONS'; positions: Position[] }
   | { type: 'CLEAR_HIGHLIGHT' }
   | { type: 'ACTIVATE_COMBO_CLAIM_MODE'; combos: Combo[] }
@@ -53,6 +59,24 @@ function uiReducer(state: UIState, action: UIAction): UIState {
       return {
         ...state,
         selectedCard: action.card,
+      };
+
+    case 'TOGGLE_BOARD_CARD_SELECTION': {
+      const cardId = action.card.id;
+      const isAlreadySelected = state.selectedBoardCards.some(c => c.id === cardId);
+
+      return {
+        ...state,
+        selectedBoardCards: isAlreadySelected
+          ? state.selectedBoardCards.filter(c => c.id !== cardId)
+          : [...state.selectedBoardCards, action.card],
+      };
+    }
+
+    case 'CLEAR_BOARD_CARD_SELECTION':
+      return {
+        ...state,
+        selectedBoardCards: [],
       };
 
     case 'HIGHLIGHT_POSITIONS':
@@ -126,6 +150,7 @@ function uiReducer(state: UIState, action: UIAction): UIState {
 function createInitialState(): UIState {
   return {
     selectedCard: null,
+    selectedBoardCards: [],
     highlightedPositions: [],
     comboClaim: {
       isActive: false,
@@ -144,6 +169,14 @@ export function useUIState(): UIStateHook {
 
   const selectCard = useCallback((card: Card | null) => {
     dispatch({ type: 'SELECT_CARD', card });
+  }, []);
+
+  const toggleBoardCardSelection = useCallback((card: Card) => {
+    dispatch({ type: 'TOGGLE_BOARD_CARD_SELECTION', card });
+  }, []);
+
+  const clearBoardCardSelection = useCallback(() => {
+    dispatch({ type: 'CLEAR_BOARD_CARD_SELECTION' });
   }, []);
 
   const highlightPositions = useCallback((positions: Position[]) => {
@@ -187,11 +220,14 @@ export function useUIState(): UIStateHook {
 
   return {
     selectedCard: state.selectedCard,
+    selectedBoardCards: state.selectedBoardCards,
     highlightedPositions: state.highlightedPositions,
     comboClaim: state.comboClaim,
     errorMessage: state.errorMessage,
     animation: state.animation,
     selectCard,
+    toggleBoardCardSelection,
+    clearBoardCardSelection,
     highlightPositions,
     clearHighlight,
     activateComboClaimMode,

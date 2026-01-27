@@ -74,6 +74,35 @@
   display: flex;
   gap: 16px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.claim-combo-button {
+  padding: 10px 24px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.claim-combo-button:hover:not(:disabled) {
+  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+}
+
+.claim-combo-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.claim-combo-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .end-turn-button {
@@ -108,6 +137,15 @@
   padding: 8px 16px;
   background: #dbeafe;
   color: #1e40af;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.selected-board-cards-info {
+  padding: 8px 16px;
+  background: #fef3c7;
+  color: #92400e;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;

@@ -7,20 +7,31 @@ interface CellProps {
   position: Position;
   card: Card | null;
   isHighlighted?: boolean;
+  isSelected?: boolean;
   onClick?: () => void;
+  onCardClick?: (card: Card) => void;
 }
 
-export function Cell({ position, card, isHighlighted = false, onClick }: CellProps) {
+export function Cell({ position, card, isHighlighted = false, isSelected = false, onClick, onCardClick }: CellProps) {
+  const handleClick = () => {
+    if (card && onCardClick) {
+      onCardClick(card);
+    } else if (!card && onClick) {
+      onClick();
+    }
+  };
+
   const classNames = [
     'cell',
     isHighlighted ? 'cell-highlighted' : '',
-    onClick && !card ? 'cell-clickable' : '',
+    isSelected ? 'cell-selected' : '',
+    (onClick && !card) || (card && onCardClick) ? 'cell-clickable' : '',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <div className={classNames} onClick={onClick} data-position={`${position.row}-${position.col}`}>
+    <div className={classNames} onClick={handleClick} data-position={`${position.row}-${position.col}`}>
       {card ? (
         <CardComponent card={card} size="large" />
       ) : (

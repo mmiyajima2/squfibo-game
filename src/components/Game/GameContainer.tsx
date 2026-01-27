@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useUIState } from '../../hooks/useUIState';
 import { useCommentary } from '../../hooks/useCommentary';
 import { Position } from '../../domain/valueObjects/Position';
 import { Card } from '../../domain/entities/Card';
 import { CardColor } from '../../domain/valueObjects/CardColor';
+import { ComboDetector } from '../../domain/services/ComboDetector';
+import { Combo } from '../../domain/services/Combo';
 import { BoardGrid } from '../Board/BoardGrid';
 import { HandArea } from '../Hand/HandArea';
 import { GameStatus } from './GameStatus';
@@ -13,10 +15,23 @@ import { CommentaryBuilder } from '../../types/Commentary';
 import './GameContainer.css';
 
 export function GameContainer() {
-  const { game, placeCardFromHand, endTurn, resetGame } = useGameState();
-  const { selectedCard, selectCard, highlightedPositions, highlightPositions, clearHighlight, errorMessage, showError, clearError } = useUIState();
-  const { messages, currentMessage, addMessage, updateCurrent, clearMessages } = useCommentary();
+  const { game, placeCardFromHand, claimCombo, endTurn, resetGame } = useGameState();
+  const {
+    selectedCard,
+    selectCard,
+    selectedBoardCards,
+    toggleBoardCardSelection,
+    clearBoardCardSelection,
+    highlightedPositions,
+    highlightPositions,
+    clearHighlight,
+    errorMessage,
+    showError,
+    clearError
+  } = useUIState();
+  const { messages, addMessage, updateCurrent, clearMessages } = useCommentary();
 
+  const comboDetector = useMemo(() => new ComboDetector(), []);
   const currentPlayer = game.getCurrentPlayer();
   const isPlayer1Turn = currentPlayer.id === 'player1';
 
@@ -91,6 +106,7 @@ export function GameContainer() {
 
       placeCardFromHand(cardToPlay, position);
       addMessage(CommentaryBuilder.playerPlacedCard(cardColor, cardValue));
+
       selectCard(null);
       clearHighlight();
       clearError();
@@ -115,6 +131,75 @@ export function GameContainer() {
     updateCurrent('あなたのターンです');
     selectCard(null);
     clearHighlight();
+    clearBoardCardSelection();
+  };
+
+  // 「役を申告」ボタンを押した時（モーダルなし、直接検証）
+  const handleClaimCombo = () => {
+    if (!isPlayer1Turn) {
+      showError('あなたのターンではありません');
+      return;
+    }
+    if (selectedBoardCards.length === 0) {
+      showError('役を構成するカードを盤面から選択してください');
+      return;
+    }
+    if (selectedBoardCards.length < 2 || selectedBoardCards.length > 3) {
+      showError('役は2枚または3枚のカードで構成されます');
+      return;
+    }
+
+    // 盤面から選択したカードの位置を取得
+    const positions: Position[] = [];
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const pos = Position.of(row, col);
+        const card = game.board.getCard(pos);
+        if (card && selectedBoardCards.some(sc => sc.id === card.id)) {
+          positions.push(pos);
+        }
+      }
+    }
+
+    // 役を検証
+    const verifiedComboType = comboDetector.checkCombo(selectedBoardCards, positions);
+
+    if (verifiedComboType === null) {
+      // 選択したカードは役ではない
+      showError('おしい！選択したカードは役ではありません');
+      clearBoardCardSelection();
+      return;
+    }
+
+    // 正しい役が申告された
+    const combo = new Combo(verifiedComboType, selectedBoardCards, positions);
+    const success = claimCombo(combo);
+
+    if (success) {
+      const cardCount = combo.getCardCount();
+      const starsAwarded = combo.getRewardStars();
+      const comboName = getComboTypeName(verifiedComboType);
+      addMessage(
+        CommentaryBuilder.createMessage('combo', '💫', `${comboName}を申告しました！★+${starsAwarded}、カード${cardCount}枚ドロー`)
+      );
+      clearBoardCardSelection();
+      clearError();
+    } else {
+      showError('役の申告に失敗しました');
+    }
+  };
+
+  const getComboTypeName = (comboType: string): string => {
+    switch (comboType) {
+      case 'TWO_CARDS_1_4':
+        return '1-4ペア';
+      case 'TWO_CARDS_4_9':
+        return '4-9ペア';
+      case 'THREE_CARDS':
+        return '1-4-16トリプル';
+      default:
+        return '役';
+    }
   };
 
   const player1 = game.players[0];
@@ -145,7 +230,9 @@ export function GameContainer() {
             <BoardGrid
               board={game.board}
               highlightedPositions={highlightedPositions}
+              selectedCards={selectedBoardCards}
               onCellClick={handleCellClick}
+              onCardClick={toggleBoardCardSelection}
             />
             <CommentaryArea messages={messages} />
           </div>
@@ -161,6 +248,13 @@ export function GameContainer() {
           />
           <div className="player-controls">
             <button
+              className="claim-combo-button"
+              onClick={handleClaimCombo}
+              disabled={!isPlayer1Turn}
+            >
+              役を申告
+            </button>
+            <button
               className="end-turn-button"
               onClick={handleEndTurn}
               disabled={!isPlayer1Turn}
@@ -170,6 +264,11 @@ export function GameContainer() {
             {selectedCard && (
               <div className="selected-card-info">
                 選択中: {selectedCard.color} {selectedCard.value.value}
+              </div>
+            )}
+            {selectedBoardCards.length > 0 && (
+              <div className="selected-board-cards-info">
+                申告用カード選択中: {selectedBoardCards.length}枚
               </div>
             )}
             {errorMessage && (
