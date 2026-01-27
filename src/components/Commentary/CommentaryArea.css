@@ -23,15 +23,47 @@
   margin: 0;
 }
 
-.commentary-current {
+.commentary-messages {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.commentary-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border-left: 3px solid #e2e8f0;
+  font-size: 13px;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.commentary-message:hover {
+  background: #f1f5f9;
+}
+
+.commentary-message-latest {
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border-radius: 8px;
   border-left: 4px solid #3b82f6;
+  padding: 12px;
   animation: slideIn 0.3s ease;
+}
+
+.commentary-message-latest:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+}
+
+.commentary-message-latest .commentary-text {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.commentary-message-latest .commentary-icon {
+  font-size: 18px;
 }
 
 @keyframes slideIn {
@@ -43,75 +75,6 @@
     opacity: 1;
     transform: translateX(0);
   }
-}
-
-.commentary-current-icon {
-  font-size: 24px;
-  flex-shrink: 0;
-}
-
-.commentary-current-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1e40af;
-  line-height: 1.4;
-}
-
-.commentary-history {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.commentary-history-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #64748b;
-  margin: 0 0 8px 0;
-}
-
-.commentary-messages {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.commentary-messages::-webkit-scrollbar {
-  width: 6px;
-}
-
-.commentary-messages::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-.commentary-messages::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.commentary-messages::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.commentary-message {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px;
-  background: #f8fafc;
-  border-radius: 6px;
-  border-left: 3px solid #e2e8f0;
-  font-size: 13px;
-  line-height: 1.4;
-  transition: all 0.2s ease;
-}
-
-.commentary-message:hover {
-  background: #f1f5f9;
 }
 
 .commentary-icon {

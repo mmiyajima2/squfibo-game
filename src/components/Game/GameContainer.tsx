@@ -147,7 +147,7 @@ export function GameContainer() {
               highlightedPositions={highlightedPositions}
               onCellClick={handleCellClick}
             />
-            <CommentaryArea messages={messages} currentMessage={currentMessage} />
+            <CommentaryArea messages={messages} />
           </div>
         </div>
 
