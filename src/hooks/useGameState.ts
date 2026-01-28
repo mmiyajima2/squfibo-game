@@ -61,7 +61,11 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       }
 
       game.claimCombo(action.combo);
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
+
+      // 役申告成功後は自動的にターンを終了
+      game.endTurn();
+      const afterIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
     }
 
     case 'END_TURN': {

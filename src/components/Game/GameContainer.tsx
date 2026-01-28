@@ -289,10 +289,9 @@ export function GameContainer() {
       clearPlacementHistory();
       clearBoardCardSelection();
       clearError();
-
-      // 役申告成功後は自動的にターンを終了
-      endTurn();
       selectCard(null);
+
+      // ターン終了はclaimComboアクション内で自動的に行われる
     } else {
       showError('役の申告に失敗しました');
     }
