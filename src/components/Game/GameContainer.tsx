@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useUIState } from '../../hooks/useUIState';
 import { useCommentary } from '../../hooks/useCommentary';
@@ -35,10 +35,16 @@ export function GameContainer() {
   const currentPlayer = game.getCurrentPlayer();
   const isPlayer1Turn = currentPlayer.id === 'player1';
 
+  // StrictModeでの二重実行を防ぐためのref
+  const hasInitialized = useRef(false);
+
   // 初回レンダリング時にゲーム開始メッセージを表示
   useEffect(() => {
-    addMessage(CommentaryBuilder.gameStart());
-    updateCurrent('あなたのターンです');
+    if (!hasInitialized.current) {
+      addMessage(CommentaryBuilder.gameStart());
+      updateCurrent('あなたのターンです');
+      hasInitialized.current = true;
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // エラーメッセージを3秒後に自動的にクリア
