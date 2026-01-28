@@ -52,6 +52,14 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
     }
 
     case 'CLAIM_COMBO': {
+      // React Strict Modeの二重実行対策
+      // コンボの位置にまだカードが存在するか確認（既にクレーム済みの場合はスキップ）
+      const hasCardsAtPositions = action.combo.positions.some(pos => !game.board.isEmpty(pos));
+      if (!hasCardsAtPositions) {
+        // 全ての位置が既に空 = 既にクレーム済み
+        return state;
+      }
+
       game.claimCombo(action.combo);
       return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
