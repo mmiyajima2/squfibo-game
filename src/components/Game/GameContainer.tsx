@@ -15,7 +15,7 @@ import { CommentaryBuilder } from '../../types/Commentary';
 import './GameContainer.css';
 
 export function GameContainer() {
-  const { game, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame } = useGameState();
+  const { game, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement } = useGameState();
   const {
     selectedCard,
     selectCard,
@@ -27,7 +27,11 @@ export function GameContainer() {
     clearHighlight,
     errorMessage,
     showError,
-    clearError
+    clearError,
+    placementHistory,
+    addPlacementHistory,
+    removeLastPlacement,
+    clearPlacementHistory
   } = useUIState();
   const { messages, addMessage, updateCurrent, clearMessages } = useCommentary();
 
@@ -136,6 +140,10 @@ export function GameContainer() {
 
       try {
         drawAndPlaceCard(position);
+        const placedCard = game.board.getCard(position);
+        if (placedCard) {
+          addPlacementHistory(placedCard, position);
+        }
         addMessage(CommentaryBuilder.createMessage('draw', '🎴', '山札から直接カードを配置しました'));
         clearError();
       } catch (error) {
@@ -165,6 +173,7 @@ export function GameContainer() {
       }
 
       placeCardFromHand(cardToPlay, position);
+      addPlacementHistory(cardToPlay, position);
       addMessage(CommentaryBuilder.playerPlacedCard(cardColor, cardValue));
 
       selectCard(null);
@@ -179,6 +188,7 @@ export function GameContainer() {
   const handleEndTurn = () => {
     if (!isPlayer1Turn) return;
     endTurn();
+    clearPlacementHistory();
     addMessage(CommentaryBuilder.cpuTurn());
     updateCurrent('CPUのターンです');
     selectCard(null);
@@ -192,6 +202,41 @@ export function GameContainer() {
     selectCard(null);
     clearHighlight();
     clearBoardCardSelection();
+    clearPlacementHistory();
+  };
+
+  const handleCancelPlacement = () => {
+    if (!isPlayer1Turn) {
+      showError('あなたのターンではありません');
+      return;
+    }
+
+    if (placementHistory.length === 0) {
+      showError('取り消すカード配置がありません');
+      return;
+    }
+
+    // 最後に配置したカードを取得
+    const lastPlacement = placementHistory[placementHistory.length - 1];
+
+    try {
+      cancelPlacement(lastPlacement.position);
+      removeLastPlacement();
+
+      const cardColor = lastPlacement.card.color === CardColor.RED ? '赤' : '青';
+      const cardValue = lastPlacement.card.value.value;
+      addMessage(
+        CommentaryBuilder.createMessage(
+          'cancel',
+          '↩️',
+          `${cardColor}${cardValue}の配置を取り消しました`
+        )
+      );
+      clearError();
+    } catch (error) {
+      console.error('Failed to cancel placement:', error);
+      showError('配置の取り消しに失敗しました');
+    }
   };
 
   // 「役を申告」ボタンを押した時（モーダルなし、直接検証）
@@ -242,6 +287,7 @@ export function GameContainer() {
       addMessage(
         CommentaryBuilder.createMessage('combo', '💫', `${comboName}を申告しました！★+${starsAwarded}、カード${cardCount}枚ドロー`)
       );
+      clearPlacementHistory();
       clearBoardCardSelection();
       clearError();
     } else {
@@ -345,6 +391,13 @@ export function GameContainer() {
               disabled={!isPlayer1Turn || isGameOver}
             >
               役を申告
+            </button>
+            <button
+              className="cancel-placement-button"
+              onClick={handleCancelPlacement}
+              disabled={!isPlayer1Turn || isGameOver || placementHistory.length === 0}
+            >
+              配置を取り消し {placementHistory.length > 0 ? `(${placementHistory.length})` : ''}
             </button>
             <button
               className="end-turn-button"

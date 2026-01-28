@@ -133,6 +133,34 @@
   opacity: 0.6;
 }
 
+.cancel-placement-button {
+  padding: 10px 24px;
+  background: #64748b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-placement-button:hover:not(:disabled) {
+  background: #475569;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3);
+}
+
+.cancel-placement-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.cancel-placement-button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .selected-card-info {
   padding: 8px 16px;
   background: #dbeafe;

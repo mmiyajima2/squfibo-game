@@ -3,6 +3,11 @@ import { Card } from '../domain/entities/Card';
 import { Position } from '../domain/valueObjects/Position';
 import { Combo } from '../domain/services/Combo';
 
+interface PlacedCardHistory {
+  card: Card;
+  position: Position;
+}
+
 interface UIState {
   // 選択中のカード（手札から選択）
   selectedCard: Card | null;
@@ -22,6 +27,8 @@ interface UIState {
     type: 'card-placed' | 'combo-claimed' | 'card-removed' | null;
     positions: Position[];
   };
+  // このターンに配置したカードの履歴
+  placementHistory: PlacedCardHistory[];
 }
 
 interface UIStateHook extends UIState {
@@ -37,6 +44,9 @@ interface UIStateHook extends UIState {
   triggerAnimation: (type: 'card-placed' | 'combo-claimed' | 'card-removed', positions: Position[]) => void;
   clearAnimation: () => void;
   resetUIState: () => void;
+  addPlacementHistory: (card: Card, position: Position) => void;
+  removeLastPlacement: () => void;
+  clearPlacementHistory: () => void;
 }
 
 type UIAction =
@@ -51,7 +61,10 @@ type UIAction =
   | { type: 'CLEAR_ERROR' }
   | { type: 'TRIGGER_ANIMATION'; animationType: 'card-placed' | 'combo-claimed' | 'card-removed'; positions: Position[] }
   | { type: 'CLEAR_ANIMATION' }
-  | { type: 'RESET_UI_STATE' };
+  | { type: 'RESET_UI_STATE' }
+  | { type: 'ADD_PLACEMENT_HISTORY'; card: Card; position: Position }
+  | { type: 'REMOVE_LAST_PLACEMENT' }
+  | { type: 'CLEAR_PLACEMENT_HISTORY' };
 
 function uiReducer(state: UIState, action: UIAction): UIState {
   switch (action.type) {
@@ -142,6 +155,30 @@ function uiReducer(state: UIState, action: UIAction): UIState {
     case 'RESET_UI_STATE':
       return createInitialState();
 
+    case 'ADD_PLACEMENT_HISTORY':
+      return {
+        ...state,
+        placementHistory: [
+          ...state.placementHistory,
+          {
+            card: action.card,
+            position: action.position,
+          },
+        ],
+      };
+
+    case 'REMOVE_LAST_PLACEMENT':
+      return {
+        ...state,
+        placementHistory: state.placementHistory.slice(0, -1),
+      };
+
+    case 'CLEAR_PLACEMENT_HISTORY':
+      return {
+        ...state,
+        placementHistory: [],
+      };
+
     default:
       return state;
   }
@@ -161,6 +198,7 @@ function createInitialState(): UIState {
       type: null,
       positions: [],
     },
+    placementHistory: [],
   };
 }
 
@@ -218,6 +256,18 @@ export function useUIState(): UIStateHook {
     dispatch({ type: 'RESET_UI_STATE' });
   }, []);
 
+  const addPlacementHistory = useCallback((card: Card, position: Position) => {
+    dispatch({ type: 'ADD_PLACEMENT_HISTORY', card, position });
+  }, []);
+
+  const removeLastPlacement = useCallback(() => {
+    dispatch({ type: 'REMOVE_LAST_PLACEMENT' });
+  }, []);
+
+  const clearPlacementHistory = useCallback(() => {
+    dispatch({ type: 'CLEAR_PLACEMENT_HISTORY' });
+  }, []);
+
   return {
     selectedCard: state.selectedCard,
     selectedBoardCards: state.selectedBoardCards,
@@ -225,6 +275,7 @@ export function useUIState(): UIStateHook {
     comboClaim: state.comboClaim,
     errorMessage: state.errorMessage,
     animation: state.animation,
+    placementHistory: state.placementHistory,
     selectCard,
     toggleBoardCardSelection,
     clearBoardCardSelection,
@@ -237,5 +288,8 @@ export function useUIState(): UIStateHook {
     triggerAnimation,
     clearAnimation,
     resetUIState,
+    addPlacementHistory,
+    removeLastPlacement,
+    clearPlacementHistory,
   };
 }

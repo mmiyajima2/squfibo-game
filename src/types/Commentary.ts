@@ -1,4 +1,4 @@
-export type CommentaryType = 'action' | 'combo' | 'star' | 'turn' | 'discard' | 'draw';
+export type CommentaryType = 'action' | 'combo' | 'star' | 'turn' | 'discard' | 'draw' | 'cancel';
 
 export interface CommentaryMessage {
   type: CommentaryType;

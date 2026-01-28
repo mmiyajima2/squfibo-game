@@ -13,6 +13,7 @@ interface GameStateHook {
   discardFromHand: (card: Card) => void;
   drawAndPlaceCard: (position: Position) => Card | null;
   resetGame: () => void;
+  cancelPlacement: (position: Position) => void;
 }
 
 type GameAction =
@@ -22,7 +23,8 @@ type GameAction =
   | { type: 'DISCARD_FROM_BOARD'; position: Position }
   | { type: 'DISCARD_FROM_HAND'; card: Card }
   | { type: 'DRAW_AND_PLACE'; position: Position }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  | { type: 'CANCEL_PLACEMENT'; position: Position };
 
 interface GameStateWrapper {
   game: Game;
@@ -92,6 +94,20 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       return { game: Game.createNewGame(), version: 0 };
     }
 
+    case 'CANCEL_PLACEMENT': {
+      // ボードが既に空の場合はスキップ（React Strict Modeでの2重実行対策）
+      if (game.board.isEmpty(action.position)) {
+        return state;
+      }
+
+      const card = game.board.removeCard(action.position);
+      if (card) {
+        const currentPlayer = game.getCurrentPlayer();
+        currentPlayer.drawToHand(card);
+      }
+      return { ...state, version: state.version + 1 };
+    }
+
     default:
       return state;
   }
@@ -149,6 +165,10 @@ export function useGameState(): GameStateHook {
     dispatch({ type: 'RESET_GAME' });
   }, []);
 
+  const cancelPlacement = useCallback((position: Position) => {
+    dispatch({ type: 'CANCEL_PLACEMENT', position });
+  }, []);
+
   return {
     game: state.game,
     placeCardFromHand,
@@ -158,5 +178,6 @@ export function useGameState(): GameStateHook {
     discardFromHand,
     drawAndPlaceCard,
     resetGame,
+    cancelPlacement,
   };
 }
