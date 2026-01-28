@@ -126,6 +126,12 @@ export function GameContainer() {
   };
 
   const handleCellClick = (position: Position) => {
+    // 1ターンに1枚のみ配置可能
+    if (placementHistory.length >= 1) {
+      showError('1ターンに配置できるカードは1枚のみです');
+      return;
+    }
+
     if (!game.board.isEmpty(position)) {
       showError('そのマスには既にカードが配置されています');
       return;
