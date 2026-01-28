@@ -46,7 +46,7 @@ export function GameContainer() {
   useEffect(() => {
     if (!hasInitialized.current) {
       addMessage(CommentaryBuilder.gameStart());
-      updateCurrent('あなたのターンです');
+      updateCurrent('下側のターンです');
       hasInitialized.current = true;
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -61,15 +61,27 @@ export function GameContainer() {
     }
   }, [errorMessage, clearError]);
 
-  const handleCardSelect = (card: Card) => {
-    if (!isPlayer1Turn) return;
+  // ターン切り替えを監視して実況を更新
+  const prevIsPlayer1Turn = useRef(isPlayer1Turn);
+  useEffect(() => {
+    // 初回レンダリングはスキップ（hasInitialized.currentで判定）
+    if (prevIsPlayer1Turn.current !== isPlayer1Turn && hasInitialized.current) {
+      const message = isPlayer1Turn
+        ? CommentaryBuilder.lowerPlayerTurn()
+        : CommentaryBuilder.upperPlayerTurn();
+      addMessage(message);
+      updateCurrent(message.text);
+    }
+    prevIsPlayer1Turn.current = isPlayer1Turn;
+  }, [isPlayer1Turn, addMessage, updateCurrent]);
 
+  const handleCardSelect = (card: Card) => {
     if (selectedCard?.equals(card)) {
       selectCard(null);
       clearHighlight();
     } else {
       // 手札から同じIDのカードを探す
-      const cardInHand = player1.hand.getCards().find(c => c.id === card.id);
+      const cardInHand = currentPlayer.hand.getCards().find(c => c.id === card.id);
       if (cardInHand) {
         selectCard(cardInHand);
         // 配置可能なセル（空のセル）をハイライト表示
@@ -88,11 +100,6 @@ export function GameContainer() {
   };
 
   const handleDeleteBoardCard = (position: Position) => {
-    if (!isPlayer1Turn) {
-      showError('あなたのターンではありません');
-      return;
-    }
-
     const card = game.board.getCard(position);
     if (!card) {
       showError('そのマスにはカードがありません');
@@ -119,10 +126,6 @@ export function GameContainer() {
   };
 
   const handleCellClick = (position: Position) => {
-    if (!isPlayer1Turn) {
-      showError('あなたのターンではありません');
-      return;
-    }
     if (!game.board.isEmpty(position)) {
       showError('そのマスには既にカードが配置されています');
       return;
@@ -174,7 +177,11 @@ export function GameContainer() {
 
       placeCardFromHand(cardToPlay, position);
       addPlacementHistory(cardToPlay, position);
-      addMessage(CommentaryBuilder.playerPlacedCard(cardColor, cardValue));
+
+      const message = isPlayer1Turn
+        ? CommentaryBuilder.lowerPlayerPlacedCard(cardColor, cardValue)
+        : CommentaryBuilder.upperPlayerPlacedCard(cardColor, cardValue);
+      addMessage(message);
 
       selectCard(null);
       clearHighlight();
@@ -186,11 +193,8 @@ export function GameContainer() {
   };
 
   const handleEndTurn = () => {
-    if (!isPlayer1Turn) return;
     endTurn();
     clearPlacementHistory();
-    addMessage(CommentaryBuilder.cpuTurn());
-    updateCurrent('CPUのターンです');
     selectCard(null);
   };
 
@@ -198,7 +202,7 @@ export function GameContainer() {
     resetGame();
     clearMessages();
     addMessage(CommentaryBuilder.gameStart());
-    updateCurrent('あなたのターンです');
+    updateCurrent('下側のターンです');
     selectCard(null);
     clearHighlight();
     clearBoardCardSelection();
@@ -206,11 +210,6 @@ export function GameContainer() {
   };
 
   const handleCancelPlacement = () => {
-    if (!isPlayer1Turn) {
-      showError('あなたのターンではありません');
-      return;
-    }
-
     if (placementHistory.length === 0) {
       showError('取り消すカード配置がありません');
       return;
@@ -241,10 +240,6 @@ export function GameContainer() {
 
   // 「役を申告」ボタンを押した時（モーダルなし、直接検証）
   const handleClaimCombo = () => {
-    if (!isPlayer1Turn) {
-      showError('あなたのターンではありません');
-      return;
-    }
     if (selectedBoardCards.length === 0) {
       showError('役を構成するカードを盤面から選択してください');
       return;
@@ -277,24 +272,26 @@ export function GameContainer() {
     }
 
     // 正しい役が申告された
+    // 役申告前に現在のプレイヤーを保存（endTurnでターンが切り替わる前に）
+    const claimingPlayer = game.getCurrentPlayer();
     const combo = new Combo(verifiedComboType, selectedBoardCards, positions);
     const success = claimCombo(combo);
 
     if (success) {
-      const cardCount = combo.getCardCount();
-      const starsAwarded = combo.getRewardStars();
       const comboName = getComboTypeName(verifiedComboType);
-      addMessage(
-        CommentaryBuilder.createMessage('combo', '💫', `${comboName}を申告しました！★+${starsAwarded}、カード${cardCount}枚ドロー`)
-      );
+
+      // 役申告の実況は申告したプレイヤーに基づく
+      const comboMessage = claimingPlayer.id === 'player1'
+        ? CommentaryBuilder.lowerPlayerClaimedCombo(comboName)
+        : CommentaryBuilder.upperPlayerClaimedCombo(comboName);
+      addMessage(comboMessage);
+
       clearPlacementHistory();
       clearBoardCardSelection();
       clearError();
 
       // 役申告成功後は自動的にターンを終了
       endTurn();
-      addMessage(CommentaryBuilder.cpuTurn());
-      updateCurrent('CPUのターンです');
       selectCard(null);
     } else {
       showError('役の申告に失敗しました');
@@ -328,18 +325,18 @@ export function GameContainer() {
             <h2>ゲーム終了！</h2>
             {winner ? (
               <p className="winner-text">
-                {winner.id === 'player1' ? 'あなた' : 'CPU'}の勝ち！
+                {winner.id === 'player1' ? '下側' : '上側'}の勝ち！
               </p>
             ) : (
               <p className="winner-text">引き分け！</p>
             )}
             <div className="final-scores">
               <div className="score-item">
-                <span>あなた:</span>
+                <span>下側:</span>
                 <span className="score-value">★ {player1.stars}</span>
               </div>
               <div className="score-item">
-                <span>CPU:</span>
+                <span>上側:</span>
                 <span className="score-value">★ {player2.stars}</span>
               </div>
             </div>
@@ -360,9 +357,10 @@ export function GameContainer() {
         <div className="opponent-area">
           <HandArea
             cards={player2.hand.getCards()}
-            selectedCard={null}
-            label="CPU の手札"
-            isOpponent={true}
+            selectedCard={isPlayer1Turn ? null : selectedCard}
+            onCardClick={handleCardSelect}
+            label="上側の手札"
+            isOpponent={isPlayer1Turn}
           />
         </div>
 
@@ -375,7 +373,7 @@ export function GameContainer() {
               selectedCards={selectedBoardCards}
               onCellClick={handleCellClick}
               onCardClick={toggleBoardCardSelection}
-              showDeleteIcons={isBoardFull && isPlayer1Turn && !isGameOver}
+              showDeleteIcons={isBoardFull && !isGameOver}
               onDeleteCard={handleDeleteBoardCard}
             />
             <CommentaryArea messages={messages} />
@@ -385,30 +383,30 @@ export function GameContainer() {
         <div className="player-area">
           <HandArea
             cards={player1.hand.getCards()}
-            selectedCard={selectedCard}
+            selectedCard={isPlayer1Turn ? selectedCard : null}
             onCardClick={handleCardSelect}
-            label="あなたの手札"
-            isOpponent={false}
+            label="下側の手札"
+            isOpponent={!isPlayer1Turn}
           />
           <div className="player-controls">
             <button
               className="claim-combo-button"
               onClick={handleClaimCombo}
-              disabled={!isPlayer1Turn || isGameOver}
+              disabled={isGameOver}
             >
               役を申告
             </button>
             <button
               className="cancel-placement-button"
               onClick={handleCancelPlacement}
-              disabled={!isPlayer1Turn || isGameOver || placementHistory.length === 0}
+              disabled={isGameOver || placementHistory.length === 0}
             >
               配置を取り消し {placementHistory.length > 0 ? `(${placementHistory.length})` : ''}
             </button>
             <button
               className="end-turn-button"
               onClick={handleEndTurn}
-              disabled={!isPlayer1Turn || isGameOver}
+              disabled={isGameOver}
             >
               ターン終了
             </button>

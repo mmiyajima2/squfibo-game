@@ -29,6 +29,7 @@ type GameAction =
 interface GameStateWrapper {
   game: Game;
   version: number;
+  currentPlayerIndexSnapshot: 0 | 1;
 }
 
 function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrapper {
@@ -47,17 +48,25 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
 
       const playedCard = currentPlayer.playCard(action.card);
       game.placeCard(playedCard, action.position);
-      return { ...state, version: state.version + 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
 
     case 'CLAIM_COMBO': {
       game.claimCombo(action.combo);
-      return { ...state, version: state.version + 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
 
     case 'END_TURN': {
+      // React Strict Modeの二重実行対策
+      // 既にターンが切り替わっている場合はスキップ
+      const beforeIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+      if (beforeIndex !== state.currentPlayerIndexSnapshot) {
+        return state;
+      }
+
       game.endTurn();
-      return { ...state, version: state.version + 1 };
+      const afterIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
     }
 
     case 'DISCARD_FROM_BOARD': {
@@ -66,7 +75,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         return state;
       }
       game.discardFromBoard(action.position);
-      return { ...state, version: state.version + 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
 
     case 'DISCARD_FROM_HAND': {
@@ -78,7 +87,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         return state;
       }
       game.discardFromHand(action.card);
-      return { ...state, version: state.version + 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
 
     case 'DRAW_AND_PLACE': {
@@ -87,11 +96,11 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         return state;
       }
       game.drawAndPlaceCard(action.position);
-      return { ...state, version: state.version + 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
 
     case 'RESET_GAME': {
-      return { game: Game.createNewGame(), version: 0 };
+      return { game: Game.createNewGame(), version: 0, currentPlayerIndexSnapshot: 0 };
     }
 
     case 'CANCEL_PLACEMENT': {
@@ -105,7 +114,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         const currentPlayer = game.getCurrentPlayer();
         currentPlayer.drawToHand(card);
       }
-      return { ...state, version: state.version + 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
 
     default:
@@ -117,6 +126,7 @@ function createInitialState(): GameStateWrapper {
   return {
     game: Game.createNewGame(),
     version: 0,
+    currentPlayerIndexSnapshot: 0,
   };
 }
 
