@@ -70,10 +70,12 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
 
     case 'END_TURN': {
       // React Strict Modeの二重実行対策
-      // 既にターンが切り替わっている場合はスキップ
       const beforeIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+
+      // gameの状態とsnapshotが一致しない場合、1回目の実行で既にターンが切り替わっている
+      // 2回目の実行では、snapshotをgameの現在の状態に同期させる
       if (beforeIndex !== state.currentPlayerIndexSnapshot) {
-        return state;
+        return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: beforeIndex as 0 | 1 };
       }
 
       game.endTurn();
