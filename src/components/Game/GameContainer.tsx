@@ -391,7 +391,7 @@ export function GameContainer() {
               selectedCards={selectedBoardCards}
               onCellClick={handleCellClick}
               onCardClick={toggleBoardCardSelection}
-              showDeleteIcons={isBoardFull && !isGameOver}
+              showDeleteIcons={isBoardFull && !isGameOver && placementHistory.length === 0}
               onDeleteCard={handleDeleteBoardCard}
             />
             <CommentaryArea messages={messages} />
