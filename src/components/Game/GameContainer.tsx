@@ -290,6 +290,12 @@ export function GameContainer() {
       clearPlacementHistory();
       clearBoardCardSelection();
       clearError();
+
+      // 役申告成功後は自動的にターンを終了
+      endTurn();
+      addMessage(CommentaryBuilder.cpuTurn());
+      updateCurrent('CPUのターンです');
+      selectCard(null);
     } else {
       showError('役の申告に失敗しました');
     }
