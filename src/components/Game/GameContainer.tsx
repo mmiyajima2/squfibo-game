@@ -277,6 +277,19 @@ export function GameContainer() {
       return;
     }
 
+    // このターンで配置したカードが含まれているかチェック
+    if (placementHistory.length > 0) {
+      const placedThisTurn = placementHistory.some(placement =>
+        selectedBoardCards.some(selectedCard => selectedCard.id === placement.card.id)
+      );
+
+      if (!placedThisTurn) {
+        showError('役には、今のターンで配置したカードを含める必要があります');
+        clearBoardCardSelection();
+        return;
+      }
+    }
+
     // 正しい役が申告された
     // 役申告前に現在のプレイヤーを保存（endTurnでターンが切り替わる前に）
     const claimingPlayer = game.getCurrentPlayer();
