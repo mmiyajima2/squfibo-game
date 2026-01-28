@@ -25,6 +25,16 @@ export class Hand {
   }
 
   getCards(): Card[] {
-    return [...this.cards];
+    return [...this.cards].sort((a, b) => {
+      // 第一ソート: 色（RED → BLUE）
+      const colorOrder = { RED: 0, BLUE: 1 };
+      const colorComparison = colorOrder[a.color] - colorOrder[b.color];
+      if (colorComparison !== 0) {
+        return colorComparison;
+      }
+
+      // 第二ソート: 数字の昇順
+      return a.value.value - b.value.value;
+    });
   }
 }

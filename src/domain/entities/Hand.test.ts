@@ -55,4 +55,32 @@ describe('Hand', () => {
 
     expect(hand.getCardCount()).toBe(1);
   });
+
+  it('should sort cards by color then by value', () => {
+    const hand = new Hand();
+    const blueNine = new Card(CardValue.of(9), CardColor.BLUE);
+    const redFour = new Card(CardValue.of(4), CardColor.RED);
+    const blueFour = new Card(CardValue.of(4), CardColor.BLUE);
+    const redOne = new Card(CardValue.of(1), CardColor.RED);
+    const redSixteen = new Card(CardValue.of(16), CardColor.RED);
+    const blueOne = new Card(CardValue.of(1), CardColor.BLUE);
+
+    // ランダムな順序で追加
+    hand.addCard(blueNine);
+    hand.addCard(redFour);
+    hand.addCard(blueFour);
+    hand.addCard(redOne);
+    hand.addCard(redSixteen);
+    hand.addCard(blueOne);
+
+    const cards = hand.getCards();
+
+    // 期待される順序: RED（1, 4, 16）→ BLUE（1, 4, 9）
+    expect(cards[0]).toBe(redOne);
+    expect(cards[1]).toBe(redFour);
+    expect(cards[2]).toBe(redSixteen);
+    expect(cards[3]).toBe(blueOne);
+    expect(cards[4]).toBe(blueFour);
+    expect(cards[5]).toBe(blueNine);
+  });
 });
