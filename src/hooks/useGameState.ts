@@ -57,7 +57,9 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       const hasCardsAtPositions = action.combo.positions.some(pos => !game.board.isEmpty(pos));
       if (!hasCardsAtPositions) {
         // 全ての位置が既に空 = 既にクレーム済み
-        return state;
+        // snapshotをgameの現在の状態に同期させる
+        const currentIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+        return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: currentIndex as 0 | 1 };
       }
 
       game.claimCombo(action.combo);
