@@ -52,6 +52,9 @@ export function CardComponent({
         alt={`${colorName} ${card.value.value}`}
         className="card-image"
       />
+      {isSelected && (
+        <div className="card-selected-indicator">✓</div>
+      )}
       {showDeleteIcon && (
         <button
           className="card-delete-icon"

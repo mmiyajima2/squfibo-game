@@ -38,9 +38,13 @@
 }
 
 .card-selected {
-  transform: translateY(-8px);
-  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
-  outline: 3px solid #3b82f6;
+  transform: translateY(-8px) rotate(-3deg);
+  box-shadow:
+    0 8px 16px rgba(59, 130, 246, 0.4),
+    0 0 30px rgba(59, 130, 246, 0.8),
+    0 0 50px rgba(59, 130, 246, 0.5);
+  outline: 4px solid #3b82f6;
+  animation: selectedFloat 2s ease-in-out infinite;
 }
 
 .card-highlighted {
@@ -54,6 +58,16 @@
   }
   50% {
     box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.3);
+  }
+}
+
+/* 選択されたカードの浮遊アニメーション */
+@keyframes selectedFloat {
+  0%, 100% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(-3deg);
   }
 }
 
@@ -113,4 +127,41 @@
 
 .card-placement-animation {
   animation: placementPop 0.3s ease-out;
+}
+
+/* 選択されたカードのチェックマーク */
+.card-selected-indicator {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: 3px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  box-shadow:
+    0 2px 8px rgba(59, 130, 246, 0.5),
+    0 0 20px rgba(59, 130, 246, 0.4);
+  z-index: 10;
+  animation: checkmarkPop 0.3s ease-out;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

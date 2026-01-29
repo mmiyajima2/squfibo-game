@@ -27,20 +27,20 @@
 }
 
 .cell-selected {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde047 100%);
-  border-color: #f59e0b;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
   border-width: 4px;
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4);
   transform: scale(1.05);
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: cellSelectedPulse 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse {
+@keyframes cellSelectedPulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4);
   }
   50% {
-    box-shadow: 0 0 30px rgba(245, 158, 11, 1), 0 0 60px rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 1), 0 0 60px rgba(59, 130, 246, 0.6);
   }
 }
 
