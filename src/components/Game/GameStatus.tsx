@@ -35,12 +35,12 @@ export function GameStatus({ game }: GameStatusProps) {
 
       <div className="status-section player-scores">
         <div className="player-score">
-          <span className="player-name">あなた</span>
-          <span className="player-stars">⭐ {currentPlayer.id === 'player1' ? currentPlayer.stars : opponent.stars}</span>
+          <span className="player-name">上側</span>
+          <span className="player-stars">⭐ {currentPlayer.id === 'player2' ? currentPlayer.stars : opponent.stars}</span>
         </div>
         <div className="player-score">
-          <span className="player-name">CPU</span>
-          <span className="player-stars">⭐ {currentPlayer.id === 'player2' ? currentPlayer.stars : opponent.stars}</span>
+          <span className="player-name">下側</span>
+          <span className="player-stars">⭐ {currentPlayer.id === 'player1' ? currentPlayer.stars : opponent.stars}</span>
         </div>
       </div>
 
