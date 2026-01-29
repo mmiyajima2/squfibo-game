@@ -137,6 +137,11 @@ export class ComboDetector {
     const values = cards.map(card => card.value.value).sort((a, b) => a - b);
 
     if (values.length === 2) {
+      // 2枚役の場合、位置が縦または横に隣接している必要がある
+      if (!this.areAdjacentTwoCards(positions)) {
+        return null;
+      }
+
       if (values[0] === 1 && values[1] === 4) {
         return ComboType.TWO_CARDS_1_4;
       }
@@ -146,11 +151,67 @@ export class ComboDetector {
     }
 
     if (values.length === 3) {
+      // 3枚役の場合、位置が連なっている必要がある（縦3つ、横3つ、またはL字型）
+      if (!this.areAdjacentThreeCards(positions)) {
+        return null;
+      }
+
       if (values[0] === 1 && values[1] === 4 && values[2] === 16) {
         return ComboType.THREE_CARDS;
       }
     }
 
     return null;
+  }
+
+  /**
+   * 2つの位置が縦または横に隣接しているかをチェック
+   */
+  private areAdjacentTwoCards(positions: Position[]): boolean {
+    if (positions.length !== 2) {
+      return false;
+    }
+
+    const [pos1, pos2] = positions;
+    const rowDiff = Math.abs(pos1.row - pos2.row);
+    const colDiff = Math.abs(pos1.col - pos2.col);
+
+    // 縦に隣接（row差が1、col差が0）または横に隣接（row差が0、col差が1）
+    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+  }
+
+  /**
+   * 3つの位置が連なっているかをチェック（縦3つ、横3つ、またはL字型）
+   */
+  private areAdjacentThreeCards(positions: Position[]): boolean {
+    if (positions.length !== 3) {
+      return false;
+    }
+
+    // 全ての位置が互いに隣接している必要がある
+    // まず、各カードが少なくとも1つの他のカードに隣接していることを確認
+    const adjacencyCount = new Map<number, number>();
+    for (let i = 0; i < 3; i++) {
+      adjacencyCount.set(i, 0);
+    }
+
+    // 全てのペアの隣接性をチェック
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 3; j++) {
+        if (this.areAdjacentTwoCards([positions[i], positions[j]])) {
+          adjacencyCount.set(i, adjacencyCount.get(i)! + 1);
+          adjacencyCount.set(j, adjacencyCount.get(j)! + 1);
+        }
+      }
+    }
+
+    // 有効な3枚役の形状：
+    // - 縦または横に3枚連なる場合：両端が1つずつ、中央が2つ隣接
+    // - L字型の場合：コーナーが2つ、端が1つずつ隣接
+    const counts = Array.from(adjacencyCount.values()).sort();
+
+    // 縦または横に3枚連なる: [1, 1, 2]（両端が1、中央が2）
+    // L字型: [1, 1, 2]（両端が1、コーナーが2）
+    return counts[0] === 1 && counts[1] === 1 && counts[2] === 2;
   }
 }

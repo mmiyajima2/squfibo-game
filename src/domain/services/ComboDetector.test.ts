@@ -133,7 +133,7 @@ describe('ComboDetector', () => {
 
       const result = detector.checkCombo(
         [card4, card9],
-        [Position.of(1, 1), Position.of(2, 2)]
+        [Position.of(1, 1), Position.of(1, 2)]
       );
 
       expect(result).toBe(ComboType.TWO_CARDS_4_9);
@@ -146,7 +146,7 @@ describe('ComboDetector', () => {
 
       const result = detector.checkCombo(
         [card1, card4, card16],
-        [Position.of(0, 0), Position.of(1, 1), Position.of(2, 2)]
+        [Position.of(0, 0), Position.of(0, 1), Position.of(0, 2)]
       );
 
       expect(result).toBe(ComboType.THREE_CARDS);
@@ -182,6 +182,64 @@ describe('ComboDetector', () => {
       const result = detector.checkCombo([card1], [Position.of(0, 0), Position.of(1, 1)]);
 
       expect(result).toBeNull();
+    });
+
+    it('should return null for 2-card combo with diagonal positions', () => {
+      const card1 = new Card(CardValue.of(1), CardColor.RED);
+      const card4 = new Card(CardValue.of(4), CardColor.RED);
+
+      // 斜め配置（角が接するだけ）
+      const result = detector.checkCombo(
+        [card1, card4],
+        [Position.of(0, 0), Position.of(1, 1)]
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null for 3-card combo with diagonal positions', () => {
+      const card1 = new Card(CardValue.of(1), CardColor.RED);
+      const card4 = new Card(CardValue.of(4), CardColor.RED);
+      const card16 = new Card(CardValue.of(16), CardColor.RED);
+
+      // 斜め配置
+      const result = detector.checkCombo(
+        [card1, card4, card16],
+        [Position.of(0, 0), Position.of(1, 1), Position.of(2, 2)]
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('should validate 3-card combo in L-shape', () => {
+      const card1 = new Card(CardValue.of(1), CardColor.BLUE);
+      const card4 = new Card(CardValue.of(4), CardColor.BLUE);
+      const card16 = new Card(CardValue.of(16), CardColor.BLUE);
+
+      // L字型配置
+      // (0,0)-(0,1)
+      //   |
+      // (1,0)
+      const result = detector.checkCombo(
+        [card1, card4, card16],
+        [Position.of(0, 0), Position.of(0, 1), Position.of(1, 0)]
+      );
+
+      expect(result).toBe(ComboType.THREE_CARDS);
+    });
+
+    it('should validate 3-card combo in vertical line', () => {
+      const card1 = new Card(CardValue.of(1), CardColor.RED);
+      const card4 = new Card(CardValue.of(4), CardColor.RED);
+      const card16 = new Card(CardValue.of(16), CardColor.RED);
+
+      // 縦に3つ連なる
+      const result = detector.checkCombo(
+        [card1, card4, card16],
+        [Position.of(0, 0), Position.of(1, 0), Position.of(2, 0)]
+      );
+
+      expect(result).toBe(ComboType.THREE_CARDS);
     });
   });
 });

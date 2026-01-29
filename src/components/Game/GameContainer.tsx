@@ -199,6 +199,12 @@ export function GameContainer() {
   };
 
   const handleEndTurn = () => {
+    // カードを配置していない場合はターン終了できない
+    if (placementHistory.length === 0) {
+      showError('カードを1枚配置してからターンを終了してください');
+      return;
+    }
+
     endTurn();
     clearPlacementHistory();
     selectCard(null);
@@ -277,17 +283,22 @@ export function GameContainer() {
       return;
     }
 
-    // このターンで配置したカードが含まれているかチェック
-    if (placementHistory.length > 0) {
-      const placedThisTurn = placementHistory.some(placement =>
-        selectedBoardCards.some(selectedCard => selectedCard.id === placement.card.id)
-      );
+    // カードを配置していない場合は役を申告できない
+    if (placementHistory.length === 0) {
+      showError('カードを1枚配置してから役を申告してください');
+      clearBoardCardSelection();
+      return;
+    }
 
-      if (!placedThisTurn) {
-        showError('役には、今のターンで配置したカードを含める必要があります');
-        clearBoardCardSelection();
-        return;
-      }
+    // このターンで配置したカードが役に含まれているかチェック
+    const placedThisTurn = placementHistory.some(placement =>
+      selectedBoardCards.some(selectedCard => selectedCard.id === placement.card.id)
+    );
+
+    if (!placedThisTurn) {
+      showError('役には、今のターンで配置したカードを含める必要があります');
+      clearBoardCardSelection();
+      return;
     }
 
     // 正しい役が申告された
