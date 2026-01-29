@@ -447,7 +447,7 @@ export function GameContainer() {
             >
               ターン終了
             </button>
-            {isBoardFull && (
+            {isBoardFull && placementHistory.length === 0 && (
               <div className="board-full-notice">
                 ⚠️ 盤面が満杯です。盤面のカードのゴミ箱アイコンをクリックして廃棄するか、役を申告してください。
               </div>
