@@ -10,6 +10,7 @@ interface CardComponentProps {
   size?: 'small' | 'medium' | 'large';
   showDeleteIcon?: boolean;
   onDelete?: (card: Card) => void;
+  isJustPlaced?: boolean;
 }
 
 export function CardComponent({
@@ -20,6 +21,7 @@ export function CardComponent({
   size = 'medium',
   showDeleteIcon = false,
   onDelete,
+  isJustPlaced = false,
 }: CardComponentProps) {
   const colorName = card.color === CardColor.RED ? 'red' : 'blue';
   const imagePath = `/cards/${colorName}-${card.value.value}.svg`;
@@ -31,6 +33,7 @@ export function CardComponent({
     isHighlighted ? 'card-highlighted' : '',
     onClick ? 'card-clickable' : '',
     showDeleteIcon ? 'card-with-delete' : '',
+    isJustPlaced ? 'card-just-placed card-placement-animation' : '',
   ]
     .filter(Boolean)
     .join(' ');

@@ -406,6 +406,7 @@ export function GameContainer() {
               onCardClick={toggleBoardCardSelection}
               showDeleteIcons={isBoardFull && !isGameOver && placementHistory.length === 0}
               onDeleteCard={handleDeleteBoardCard}
+              placementHistory={placementHistory}
             />
             <CommentaryArea messages={messages} />
             <ComboRulesPanel />

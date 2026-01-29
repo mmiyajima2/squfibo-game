@@ -4,6 +4,11 @@ import { Card } from '../../domain/entities/Card';
 import { Cell } from './Cell';
 import './BoardGrid.css';
 
+interface PlacedCardHistory {
+  card: Card;
+  position: Position;
+}
+
 interface BoardGridProps {
   board: Board;
   highlightedPositions?: Position[];
@@ -12,6 +17,7 @@ interface BoardGridProps {
   onCardClick?: (card: Card) => void;
   showDeleteIcons?: boolean;
   onDeleteCard?: (position: Position) => void;
+  placementHistory?: PlacedCardHistory[];
 }
 
 export function BoardGrid({
@@ -22,6 +28,7 @@ export function BoardGrid({
   onCardClick,
   showDeleteIcons = false,
   onDeleteCard,
+  placementHistory = [],
 }: BoardGridProps) {
   const isHighlighted = (position: Position): boolean => {
     return highlightedPositions.some((p) => p.equals(position));
@@ -30,6 +37,13 @@ export function BoardGrid({
   const isSelected = (card: Card | null): boolean => {
     if (!card) return false;
     return selectedCards.some((c) => c.id === card.id);
+  };
+
+  const isJustPlaced = (position: Position, card: Card | null): boolean => {
+    if (!card) return false;
+    return placementHistory.some(
+      (ph) => ph.position.equals(position) && ph.card.id === card.id
+    );
   };
 
   const handleCellClick = (position: Position) => {
@@ -56,6 +70,7 @@ export function BoardGrid({
                 onCardClick={onCardClick}
                 showDeleteIcon={showDeleteIcons && card !== null}
                 onDeleteCard={onDeleteCard}
+                isJustPlaced={isJustPlaced(position, card)}
               />
             );
           })}
