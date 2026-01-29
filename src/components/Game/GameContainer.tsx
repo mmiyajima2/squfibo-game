@@ -466,11 +466,6 @@ export function GameContainer() {
                 ⚠️ 盤面が満杯です。盤面のカードのゴミ箱アイコンをクリックして廃棄するか、役を申告してください。
               </div>
             )}
-            {!player1.hand.hasCards() && !game.deck.isEmpty() && (
-              <div className="no-hand-notice">
-                💡 手札がありません。空きマスをクリックすると山札から直接配置できます。
-              </div>
-            )}
             {selectedCard && (
               <div className="selected-card-info">
                 選択中: {selectedCard.color} {selectedCard.value.value}
