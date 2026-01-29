@@ -426,7 +426,6 @@ export function GameContainer() {
               onDeleteCard={handleDeleteBoardCard}
               placementHistory={placementHistory}
             />
-            <CommentaryArea messages={messages} />
             <ComboRulesPanel />
           </div>
         </div>
@@ -482,6 +481,7 @@ export function GameContainer() {
               </div>
             )}
           </div>
+          <CommentaryArea messages={messages} />
         </div>
       </div>
     </div>
