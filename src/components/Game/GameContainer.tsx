@@ -11,8 +11,10 @@ import { BoardGrid } from '../Board/BoardGrid';
 import { HandArea } from '../Hand/HandArea';
 import { GameStatus } from './GameStatus';
 import { CommentaryArea } from '../Commentary/CommentaryArea';
+import { ComboRulesPanel } from '../ComboRules/ComboRulesPanel';
 import { CommentaryBuilder } from '../../types/Commentary';
 import './GameContainer.css';
+import '../ComboRules/ComboRulesPanel.css';
 
 export function GameContainer() {
   const { game, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement } = useGameState();
@@ -406,6 +408,7 @@ export function GameContainer() {
               onDeleteCard={handleDeleteBoardCard}
             />
             <CommentaryArea messages={messages} />
+            <ComboRulesPanel />
           </div>
         </div>
 
