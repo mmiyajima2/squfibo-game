@@ -74,11 +74,25 @@ export function GameContainer() {
       addMessage(message);
       updateCurrent(message.text);
 
+      // 自動ドローの実況メッセージ
+      const autoDrawnPlayerId = game.getLastAutoDrawnPlayerId();
+      if (autoDrawnPlayerId) {
+        const playerName = autoDrawnPlayerId === 'player1' ? '下側' : '上側';
+        addMessage(
+          CommentaryBuilder.createMessage(
+            'draw',
+            '🎴',
+            `${playerName}の手札が0枚だったため、山札から1枚自動ドローしました`
+          )
+        );
+        game.clearAutoDrawFlag();
+      }
+
       // ターン切り替え時に配置履歴をクリア（配置を示す効果を消す）
       clearPlacementHistory();
     }
     prevIsPlayer1Turn.current = isPlayer1Turn;
-  }, [isPlayer1Turn, addMessage, updateCurrent, clearPlacementHistory]);
+  }, [isPlayer1Turn, addMessage, updateCurrent, clearPlacementHistory, game]);
 
   const handleCardSelect = (card: Card) => {
     if (selectedCard?.equals(card)) {

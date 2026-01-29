@@ -11,6 +11,8 @@ export enum GameState {
 }
 
 export class Game {
+  private lastAutoDrawnPlayerId: string | null = null;
+
   private constructor(
     public readonly board: Board,
     public readonly deck: Deck,
@@ -150,6 +152,18 @@ export class Game {
     }
 
     this.currentPlayerIndex = this.currentPlayerIndex === 0 ? 1 : 0;
+
+    // ターン開始時の自動ドロー
+    if (this.gameState !== GameState.FINISHED) {
+      const nextPlayer = this.getCurrentPlayer();
+      if (!nextPlayer.hand.hasCards() && !this.deck.isEmpty()) {
+        const drawnCard = this.deck.draw();
+        if (drawnCard) {
+          nextPlayer.drawToHand(drawnCard);
+          this.lastAutoDrawnPlayerId = nextPlayer.id;
+        }
+      }
+    }
   }
 
   isGameOver(): boolean {
@@ -180,5 +194,13 @@ export class Game {
 
   getGameState(): GameState {
     return this.gameState;
+  }
+
+  getLastAutoDrawnPlayerId(): string | null {
+    return this.lastAutoDrawnPlayerId;
+  }
+
+  clearAutoDrawFlag(): void {
+    this.lastAutoDrawnPlayerId = null;
   }
 }

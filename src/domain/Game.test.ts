@@ -483,4 +483,92 @@ describe('Game', () => {
       expect(game.isGameOver()).toBe(false);
     });
   });
+
+  describe('endTurn - auto draw when hand is empty', () => {
+    it('should auto draw 1 card when next player has no hand cards', () => {
+      const game = Game.createNewGame();
+      const player1 = game.players[0];
+
+      // プレイヤー1の手札を全て使い切る
+      const handCards = [...player1.hand.getCards()];
+      handCards.forEach(card => {
+        player1.playCard(card);
+      });
+
+      expect(player1.hand.hasCards()).toBe(false);
+      const deckCountBefore = game.deck.getCardCount();
+
+      // プレイヤー2のターンを終了してプレイヤー1のターンに戻る
+      game.endTurn(); // player2のターン
+      game.endTurn(); // player1のターンに戻る
+
+      // プレイヤー1の手札に自動で1枚追加されているはず
+      expect(player1.hand.getCardCount()).toBe(1);
+      expect(game.deck.getCardCount()).toBe(deckCountBefore - 1);
+    });
+
+    it('should not auto draw when deck is empty', () => {
+      const game = Game.createNewGame();
+      const player1 = game.players[0];
+
+      // 手札を空にする
+      const handCards = [...player1.hand.getCards()];
+      handCards.forEach(card => {
+        player1.playCard(card);
+      });
+
+      // 山札を空にする
+      while (!game.deck.isEmpty()) {
+        game.deck.draw();
+      }
+
+      expect(player1.hand.hasCards()).toBe(false);
+      expect(game.deck.isEmpty()).toBe(true);
+
+      game.endTurn();
+      game.endTurn();
+
+      // 手札は空のまま
+      expect(player1.hand.hasCards()).toBe(false);
+    });
+
+    it('should not auto draw when player already has cards', () => {
+      const game = Game.createNewGame();
+      const player1 = game.players[0];
+
+      expect(player1.hand.hasCards()).toBe(true);
+      const handCountBefore = player1.hand.getCardCount();
+      const deckCountBefore = game.deck.getCardCount();
+
+      game.endTurn();
+      game.endTurn();
+
+      // 手札枚数は変わらない
+      expect(player1.hand.getCardCount()).toBe(handCountBefore);
+      expect(game.deck.getCardCount()).toBe(deckCountBefore);
+    });
+
+    it('should set auto draw flag when auto draw occurs', () => {
+      const game = Game.createNewGame();
+      const player1 = game.players[0];
+
+      // 手札を空にする
+      const handCards = [...player1.hand.getCards()];
+      handCards.forEach(card => {
+        player1.playCard(card);
+      });
+
+      game.endTurn(); // player2のターン
+      expect(game.getLastAutoDrawnPlayerId()).toBeNull();
+
+      game.endTurn(); // player1のターンに戻る
+
+      // 自動ドローフラグが設定されているはず
+      expect(game.getLastAutoDrawnPlayerId()).toBe('player1');
+
+      // フラグをクリア
+      game.clearAutoDrawFlag();
+      expect(game.getLastAutoDrawnPlayerId()).toBeNull();
+    });
+  });
 });
