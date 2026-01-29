@@ -73,9 +73,12 @@ export function GameContainer() {
         : CommentaryBuilder.upperPlayerTurn();
       addMessage(message);
       updateCurrent(message.text);
+
+      // ターン切り替え時に配置履歴をクリア（配置を示す効果を消す）
+      clearPlacementHistory();
     }
     prevIsPlayer1Turn.current = isPlayer1Turn;
-  }, [isPlayer1Turn, addMessage, updateCurrent]);
+  }, [isPlayer1Turn, addMessage, updateCurrent, clearPlacementHistory]);
 
   const handleCardSelect = (card: Card) => {
     if (selectedCard?.equals(card)) {
@@ -260,6 +263,7 @@ export function GameContainer() {
     }
     if (selectedBoardCards.length < 2 || selectedBoardCards.length > 3) {
       showError('役は2枚または3枚のカードで構成されます');
+      clearBoardCardSelection();
       return;
     }
 
