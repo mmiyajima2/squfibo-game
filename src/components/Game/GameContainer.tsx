@@ -382,12 +382,12 @@ export function GameContainer() {
             )}
             <div className="final-scores">
               <div className="score-item">
-                <span>下側:</span>
-                <span className="score-value">★ {player1.stars}</span>
-              </div>
-              <div className="score-item">
                 <span>上側:</span>
                 <span className="score-value">★ {player2.stars}</span>
+              </div>
+              <div className="score-item">
+                <span>下側:</span>
+                <span className="score-value">★ {player1.stars}</span>
               </div>
             </div>
             <button className="new-game-button" onClick={handleResetGame}>
