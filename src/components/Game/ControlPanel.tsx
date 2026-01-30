@@ -16,14 +16,15 @@ export function ControlPanel({ onClaimCombo, onEndTurn, isGameOver }: ControlPan
           onClick={onClaimCombo}
           disabled={isGameOver}
         >
-          役を申告
+          🎯 役を申告
         </button>
+        <div className="button-divider"></div>
         <button
           className="control-button end-turn"
           onClick={onEndTurn}
           disabled={isGameOver}
         >
-          ターン終了
+          ✓ ターン終了
         </button>
       </div>
     </div>

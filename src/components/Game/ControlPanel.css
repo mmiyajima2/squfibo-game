@@ -18,7 +18,7 @@
 .control-buttons {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
 .control-button {
@@ -63,4 +63,22 @@
 .control-button.end-turn:hover:not(:disabled) {
   background: #059669;
   box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.button-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #cbd5e1, transparent);
+  margin: 12px 0;
+  position: relative;
+}
+
+.button-divider::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 13px;
+  background: #ffffff;
 }
