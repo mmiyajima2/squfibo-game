@@ -337,6 +337,17 @@ export function GameContainer() {
         : CommentaryBuilder.upperPlayerClaimedCombo(comboName);
       addMessage(comboMessage);
 
+      // Add special message for clearing yaku
+      if (verifiedComboType === 'CLEARING_YAKU') {
+        addMessage(
+          CommentaryBuilder.createMessage(
+            'clear',
+            '🧹',
+            '盤面のカードを全て廃棄しました！'
+          )
+        );
+      }
+
       clearPlacementHistory();
       clearBoardCardSelection();
       clearError();
@@ -356,6 +367,8 @@ export function GameContainer() {
         return '4-9ペア';
       case 'THREE_CARDS':
         return '1-4-16トリプル';
+      case 'CLEARING_YAKU':
+        return '調整役';
       default:
         return '役';
     }

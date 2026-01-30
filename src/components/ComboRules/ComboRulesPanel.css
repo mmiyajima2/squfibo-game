@@ -19,6 +19,13 @@
   color: #d4a017;
 }
 
+.combo-rules-subtitle {
+  font-weight: bold;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  color: #333;
+}
+
 .combo-rule-section {
   margin-bottom: 10px;
 }

@@ -35,6 +35,14 @@ export class ComboDetector {
     );
     combos.push(...threeCardCombos);
 
+    const clearingYaku = this.findClearingYaku(
+      board,
+      lastCard,
+      lastPlacedPosition,
+      allPositions
+    );
+    combos.push(...clearingYaku);
+
     return combos;
   }
 
@@ -120,6 +128,49 @@ export class ComboDetector {
     return combos;
   }
 
+  private findClearingYaku(
+    board: Board,
+    lastCard: Card,
+    lastPlacedPosition: Position,
+    allPositions: Position[]
+  ): Combo[] {
+    const combos: Combo[] = [];
+    const lastValue = lastCard.value.value;
+
+    const sameColorPositions = allPositions.filter(pos => {
+      if (pos.equals(lastPlacedPosition)) {
+        return false;
+      }
+      const card = board.getCard(pos);
+      return card !== null && card.isSameColor(lastCard);
+    });
+
+    for (let i = 0; i < sameColorPositions.length; i++) {
+      for (let j = i + 1; j < sameColorPositions.length; j++) {
+        const pos1 = sameColorPositions[i];
+        const pos2 = sameColorPositions[j];
+        const card1 = board.getCard(pos1)!;
+        const card2 = board.getCard(pos2)!;
+
+        // Check if all three cards have the same value
+        if (lastValue === card1.value.value && lastValue === card2.value.value) {
+          // Check if the three positions are adjacent
+          if (this.areAdjacentThreeCards([lastPlacedPosition, pos1, pos2])) {
+            combos.push(
+              new Combo(
+                ComboType.CLEARING_YAKU,
+                [lastCard, card1, card2],
+                [lastPlacedPosition, pos1, pos2]
+              )
+            );
+          }
+        }
+      }
+    }
+
+    return combos;
+  }
+
   checkCombo(cards: Card[], positions: Position[]): ComboType | null {
     if (cards.length !== positions.length) {
       return null;
@@ -158,6 +209,11 @@ export class ComboDetector {
 
       if (values[0] === 1 && values[1] === 4 && values[2] === 16) {
         return ComboType.THREE_CARDS;
+      }
+
+      // Check for clearing yaku: all three cards have the same value
+      if (values[0] === values[1] && values[1] === values[2]) {
+        return ComboType.CLEARING_YAKU;
       }
     }
 

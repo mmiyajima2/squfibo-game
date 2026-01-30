@@ -3,7 +3,7 @@ import { Deck } from './entities/Deck';
 import { Player } from './entities/Player';
 import { Card } from './entities/Card';
 import { Position } from './valueObjects/Position';
-import { Combo } from './services/Combo';
+import { Combo, isClearingCombo } from './services/Combo';
 
 export enum GameState {
   PLAYING = 'PLAYING',
@@ -108,6 +108,20 @@ export class Game {
   claimCombo(combo: Combo): boolean {
     if (this.gameState === GameState.FINISHED) {
       return false;
+    }
+
+    // Handle clearing yaku: clear all cards from the board
+    if (isClearingCombo(combo.type)) {
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const pos = Position.of(row, col);
+          const card = this.board.removeCard(pos);
+          if (card) {
+            this.discardPile.push(card);
+          }
+        }
+      }
+      return true; // No card refill or star reward
     }
 
     const currentPlayer = this.getCurrentPlayer();
