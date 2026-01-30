@@ -10,6 +10,8 @@ interface CardComponentProps {
   size?: 'small' | 'medium' | 'large';
   showDeleteIcon?: boolean;
   onDelete?: (card: Card) => void;
+  showCancelIcon?: boolean;
+  onCancel?: (card: Card) => void;
   isJustPlaced?: boolean;
 }
 
@@ -21,6 +23,8 @@ export function CardComponent({
   size = 'medium',
   showDeleteIcon = false,
   onDelete,
+  showCancelIcon = false,
+  onCancel,
   isJustPlaced = false,
 }: CardComponentProps) {
   const colorName = card.color === CardColor.RED ? 'red' : 'blue';
@@ -33,6 +37,7 @@ export function CardComponent({
     isHighlighted ? 'card-highlighted' : '',
     onClick ? 'card-clickable' : '',
     showDeleteIcon ? 'card-with-delete' : '',
+    showCancelIcon ? 'card-with-cancel' : '',
     isJustPlaced ? 'card-just-placed card-placement-animation' : '',
   ]
     .filter(Boolean)
@@ -42,6 +47,13 @@ export function CardComponent({
     e.stopPropagation();
     if (onDelete) {
       onDelete(card);
+    }
+  };
+
+  const handleCancelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onCancel) {
+      onCancel(card);
     }
   };
 
@@ -62,6 +74,15 @@ export function CardComponent({
           aria-label="カードを廃棄"
         >
           🗑️
+        </button>
+      )}
+      {showCancelIcon && (
+        <button
+          className="card-cancel-icon"
+          onClick={handleCancelClick}
+          aria-label="配置を取り消し"
+        >
+          ↩️
         </button>
       )}
     </div>

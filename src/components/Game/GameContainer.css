@@ -55,6 +55,9 @@
 .opponent-area,
 .player-area {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .game-middle {
@@ -69,96 +72,19 @@
   align-items: flex-start;
 }
 
-.player-controls {
-  margin-top: 8px;
+.board-and-info-container {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
 }
 
-.claim-combo-button {
-  padding: 10px 24px;
-  background: #f59e0b;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.claim-combo-button:hover:not(:disabled) {
-  background: #d97706;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
-}
-
-.claim-combo-button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.claim-combo-button:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.end-turn-button {
-  padding: 10px 24px;
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.end-turn-button:hover:not(:disabled) {
-  background: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-}
-
-.end-turn-button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.end-turn-button:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.cancel-placement-button {
-  padding: 10px 24px;
-  background: #64748b;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancel-placement-button:hover:not(:disabled) {
-  background: #475569;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3);
-}
-
-.cancel-placement-button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.cancel-placement-button:disabled {
-  background: #cbd5e1;
-  cursor: not-allowed;
-  opacity: 0.6;
+.info-display-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
 }
 
 .selected-card-info {

@@ -12,6 +12,7 @@ import { HandArea } from '../Hand/HandArea';
 import { GameStatus } from './GameStatus';
 import { CommentaryArea } from '../Commentary/CommentaryArea';
 import { ComboRulesPanel } from '../ComboRules/ComboRulesPanel';
+import { ControlPanel } from './ControlPanel';
 import { CommentaryBuilder } from '../../types/Commentary';
 import './GameContainer.css';
 import '../ComboRules/ComboRulesPanel.css';
@@ -240,21 +241,21 @@ export function GameContainer() {
     clearPlacementHistory();
   };
 
-  const handleCancelPlacement = () => {
-    if (placementHistory.length === 0) {
+  const handleCancelCard = (position: Position) => {
+    // 配置履歴からこのpositionのカードを探す
+    const placement = placementHistory.find(ph => ph.position.equals(position));
+
+    if (!placement) {
       showError('取り消すカード配置がありません');
       return;
     }
 
-    // 最後に配置したカードを取得
-    const lastPlacement = placementHistory[placementHistory.length - 1];
-
     try {
-      cancelPlacement(lastPlacement.position);
+      cancelPlacement(position);
       removeLastPlacement();
 
-      const cardColor = lastPlacement.card.color === CardColor.RED ? '赤' : '青';
-      const cardValue = lastPlacement.card.value.value;
+      const cardColor = placement.card.color === CardColor.RED ? '赤' : '青';
+      const cardValue = placement.card.value.value;
       addMessage(
         CommentaryBuilder.createMessage(
           'cancel',
@@ -416,15 +417,46 @@ export function GameContainer() {
         <div className="game-middle">
           <div className="status-board-commentary-container">
             <GameStatus game={game} />
-            <BoardGrid
-              board={game.board}
-              highlightedPositions={highlightedPositions}
-              selectedCards={selectedBoardCards}
-              onCellClick={handleCellClick}
-              onCardClick={toggleBoardCardSelection}
-              showDeleteIcons={isBoardFull && !isGameOver && placementHistory.length === 0}
-              onDeleteCard={handleDeleteBoardCard}
-              placementHistory={placementHistory}
+            <div className="board-and-info-container">
+              <BoardGrid
+                board={game.board}
+                highlightedPositions={highlightedPositions}
+                selectedCards={selectedBoardCards}
+                onCellClick={handleCellClick}
+                onCardClick={toggleBoardCardSelection}
+                showDeleteIcons={isBoardFull && !isGameOver && placementHistory.length === 0}
+                onDeleteCard={handleDeleteBoardCard}
+                showCancelIcons={placementHistory.length > 0}
+                onCancelCard={handleCancelCard}
+                placementHistory={placementHistory}
+              />
+              <div className="info-display-area">
+                {isBoardFull && placementHistory.length === 0 && (
+                  <div className="board-full-notice">
+                    ⚠️ 盤面が満杯です。盤面のカードのゴミ箱アイコンをクリックして廃棄するか、役を申告してください。
+                  </div>
+                )}
+                {selectedCard && (
+                  <div className="selected-card-info">
+                    選択中: {selectedCard.color} {selectedCard.value.value}
+                  </div>
+                )}
+                {selectedBoardCards.length > 0 && (
+                  <div className="selected-board-cards-info">
+                    申告用カード選択中: {selectedBoardCards.length}枚
+                  </div>
+                )}
+                {errorMessage && (
+                  <div className="error-message">
+                    {errorMessage}
+                  </div>
+                )}
+              </div>
+            </div>
+            <ControlPanel
+              onClaimCombo={handleClaimCombo}
+              onEndTurn={handleEndTurn}
+              isGameOver={isGameOver}
             />
             <ComboRulesPanel />
           </div>
@@ -438,49 +470,6 @@ export function GameContainer() {
             label="下側の手札"
             isOpponent={!isPlayer1Turn}
           />
-          <div className="player-controls">
-            <button
-              className="claim-combo-button"
-              onClick={handleClaimCombo}
-              disabled={isGameOver}
-            >
-              役を申告
-            </button>
-            <button
-              className="cancel-placement-button"
-              onClick={handleCancelPlacement}
-              disabled={isGameOver || placementHistory.length === 0}
-            >
-              配置を取り消し {placementHistory.length > 0 ? `(${placementHistory.length})` : ''}
-            </button>
-            <button
-              className="end-turn-button"
-              onClick={handleEndTurn}
-              disabled={isGameOver}
-            >
-              ターン終了
-            </button>
-            {isBoardFull && placementHistory.length === 0 && (
-              <div className="board-full-notice">
-                ⚠️ 盤面が満杯です。盤面のカードのゴミ箱アイコンをクリックして廃棄するか、役を申告してください。
-              </div>
-            )}
-            {selectedCard && (
-              <div className="selected-card-info">
-                選択中: {selectedCard.color} {selectedCard.value.value}
-              </div>
-            )}
-            {selectedBoardCards.length > 0 && (
-              <div className="selected-board-cards-info">
-                申告用カード選択中: {selectedBoardCards.length}枚
-              </div>
-            )}
-            {errorMessage && (
-              <div className="error-message">
-                {errorMessage}
-              </div>
-            )}
-          </div>
           <CommentaryArea messages={messages} />
         </div>
       </div>

@@ -17,6 +17,8 @@ interface BoardGridProps {
   onCardClick?: (card: Card) => void;
   showDeleteIcons?: boolean;
   onDeleteCard?: (position: Position) => void;
+  showCancelIcons?: boolean;
+  onCancelCard?: (position: Position) => void;
   placementHistory?: PlacedCardHistory[];
 }
 
@@ -28,6 +30,8 @@ export function BoardGrid({
   onCardClick,
   showDeleteIcons = false,
   onDeleteCard,
+  showCancelIcons = false,
+  onCancelCard,
   placementHistory = [],
 }: BoardGridProps) {
   const isHighlighted = (position: Position): boolean => {
@@ -70,6 +74,8 @@ export function BoardGrid({
                 onCardClick={onCardClick}
                 showDeleteIcon={showDeleteIcons && card !== null}
                 onDeleteCard={onDeleteCard}
+                showCancelIcon={showCancelIcons && isJustPlaced(position, card)}
+                onCancelCard={onCancelCard}
                 isJustPlaced={isJustPlaced(position, card)}
               />
             );

@@ -22,13 +22,13 @@
 }
 
 .status-label {
-  font-size: 14px;
+  font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
 .status-value {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
@@ -62,13 +62,13 @@
 }
 
 .player-name {
-  font-size: 13px;
+  font-size: 11px;
   color: #64748b;
   font-weight: 500;
 }
 
 .player-stars {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   color: #f59e0b;
 }
