@@ -1,6 +1,22 @@
 
 # バグ
 
+## [x] ターンの切り替えがおかしい場合がある(再2)
+- 人間（下側）が、先攻
+- 人間が手札をおく
+- 人間がターン終了する
+- CPUがカードをおく
+- CPUがタターを終了する
+- 人間が手札をおく
+- 人間がターン終了する
+- ターンがCPUにならない(なるべき)
+- **【完了】修正内容：**
+  - `GameContainer.tsx`の183-188行目のCPUステップキュー監視useEffectを修正
+  - 問題：`cpuStepsQueue.length > 0`の条件により、キューが空になった時に`executeNextCPUStep()`が呼ばれず、`isCPUExecuting`が`false`にリセットされない
+  - 修正：条件から`cpuStepsQueue.length > 0`を削除し、`isCPUExecuting`が`true`の時は必ず`executeNextCPUStep()`を呼ぶように変更
+  - これにより、CPUターン終了時に確実に`isCPUExecuting`が`false`にリセットされ、次のCPUターンが正しく開始される
+  - 全109テスト成功
+
 ## [x] ターンの切り替えがおかしい場合がある(再)
 - 人間（下側）が、先攻
 - 人間が手札をおく

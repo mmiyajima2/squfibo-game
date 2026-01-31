@@ -182,7 +182,7 @@ export function GameContainer() {
 
   // CPUステップキューの監視
   useEffect(() => {
-    if (isCPUExecuting && cpuStepsQueue.length > 0) {
+    if (isCPUExecuting) {
       executeNextCPUStep();
     }
   }, [isCPUExecuting, cpuStepsQueue, executeNextCPUStep]);
