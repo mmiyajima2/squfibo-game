@@ -9,6 +9,7 @@ interface GameStateHook {
   game: Game;
   version: number;
   currentPlayerIndex: 0 | 1;
+  hasGameStarted: boolean;
   placeCardFromHand: (card: Card, position: Position) => void;
   claimCombo: (combo: Combo) => boolean;
   endTurn: () => void;
@@ -35,6 +36,7 @@ interface GameStateWrapper {
   game: Game;
   version: number;
   currentPlayerIndexSnapshot: 0 | 1;
+  hasGameStarted: boolean;
 }
 
 function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrapper {
@@ -53,7 +55,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
 
       const playedCard = currentPlayer.playCard(action.card);
       game.placeCard(playedCard, action.position);
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
     }
 
     case 'CLAIM_COMBO': {
@@ -72,7 +74,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       // 役申告成功後は自動的にターンを終了
       game.endTurn();
       const afterIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1, hasGameStarted: state.hasGameStarted };
     }
 
     case 'END_TURN': {
@@ -98,7 +100,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         afterIndex,
         newVersion: state.version + 1
       });
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1, hasGameStarted: state.hasGameStarted };
     }
 
     case 'DISCARD_FROM_BOARD': {
@@ -107,7 +109,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         return state;
       }
       game.discardFromBoard(action.position);
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
     }
 
     case 'DISCARD_FROM_HAND': {
@@ -119,7 +121,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         return state;
       }
       game.discardFromHand(action.card);
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
     }
 
     case 'DRAW_AND_PLACE': {
@@ -128,7 +130,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         return state;
       }
       game.drawAndPlaceCard(action.position);
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
     }
 
     case 'RESET_GAME': {
@@ -136,7 +138,8 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       return {
         game: Game.createNewGame(action.cpuDifficulty, playerGoesFirst),
         version: 0,
-        currentPlayerIndexSnapshot: playerGoesFirst ? 0 : 1
+        currentPlayerIndexSnapshot: playerGoesFirst ? 0 : 1,
+        hasGameStarted: true,
       };
     }
 
@@ -151,7 +154,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         const currentPlayer = game.getCurrentPlayer();
         currentPlayer.drawToHand(card);
       }
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
     }
 
     case 'EXECUTE_CPU_TURN': {
@@ -188,7 +191,7 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
         afterIndex,
         newVersion: state.version + 1
       });
-      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1, hasGameStarted: state.hasGameStarted };
     }
 
     default:
@@ -201,6 +204,7 @@ function createInitialState(): GameStateWrapper {
     game: Game.createNewGame(),
     version: 0,
     currentPlayerIndexSnapshot: 0,
+    hasGameStarted: false,
   };
 }
 
@@ -261,6 +265,7 @@ export function useGameState(): GameStateHook {
     game: state.game,
     version: state.version,
     currentPlayerIndex: state.currentPlayerIndexSnapshot,
+    hasGameStarted: state.hasGameStarted,
     placeCardFromHand,
     claimCombo,
     endTurn,

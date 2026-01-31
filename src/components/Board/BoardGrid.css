@@ -14,3 +14,9 @@
 .board-row:not(:last-child) {
   margin-bottom: 8px;
 }
+
+.board-grid-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(0.3);
+}

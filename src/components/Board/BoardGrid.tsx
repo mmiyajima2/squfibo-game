@@ -20,6 +20,7 @@ interface BoardGridProps {
   showCancelIcons?: boolean;
   onCancelCard?: (position: Position) => void;
   placementHistory?: PlacedCardHistory[];
+  disabled?: boolean;
 }
 
 export function BoardGrid({
@@ -33,6 +34,7 @@ export function BoardGrid({
   showCancelIcons = false,
   onCancelCard,
   placementHistory = [],
+  disabled = false,
 }: BoardGridProps) {
   const isHighlighted = (position: Position): boolean => {
     return highlightedPositions.some((p) => p.equals(position));
@@ -51,13 +53,13 @@ export function BoardGrid({
   };
 
   const handleCellClick = (position: Position) => {
-    if (onCellClick) {
+    if (onCellClick && !disabled) {
       onCellClick(position);
     }
   };
 
   return (
-    <div className="board-grid">
+    <div className={`board-grid ${disabled ? 'board-grid-disabled' : ''}`}>
       {[0, 1, 2].map((row) => (
         <div key={row} className="board-row">
           {[0, 1, 2].map((col) => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useUIState } from '../../hooks/useUIState';
 import { useCommentary } from '../../hooks/useCommentary';
@@ -20,7 +20,7 @@ import './GameContainer.css';
 import '../ComboRules/ComboRulesPanel.css';
 
 export function GameContainer() {
-  const { game, version, currentPlayerIndex, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn } = useGameState();
+  const { game, version, currentPlayerIndex, hasGameStarted, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn } = useGameState();
   const {
     selectedCard,
     selectCard,
@@ -51,14 +51,18 @@ export function GameContainer() {
   // StrictModeでの二重実行を防ぐためのref
   const hasInitialized = useRef(false);
 
-  // 初回レンダリング時にゲーム開始メッセージを表示
+  // 初回レンダリング時のメッセージ表示
   useEffect(() => {
     if (!hasInitialized.current) {
-      addMessage(CommentaryBuilder.gameStart());
-      updateCurrent('下側のターンです');
+      if (hasGameStarted) {
+        addMessage(CommentaryBuilder.gameStart());
+        updateCurrent('下側のターンです');
+      } else {
+        updateCurrent('「新しいゲーム」ボタンを押してゲームを開始してください');
+      }
       hasInitialized.current = true;
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasGameStarted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // エラーメッセージを3秒後に自動的にクリア
   useEffect(() => {
@@ -146,6 +150,8 @@ export function GameContainer() {
 
 
   const handleCardSelect = (card: Card) => {
+    if (!hasGameStarted) return;
+
     if (selectedCard?.equals(card)) {
       selectCard(null);
       clearHighlight();
@@ -196,6 +202,8 @@ export function GameContainer() {
   };
 
   const handleCellClick = (position: Position) => {
+    if (!hasGameStarted) return;
+
     // 1ターンに1枚のみ配置可能
     if (placementHistory.length >= 1) {
       showError('1ターンに配置できるカードは1枚のみです');
@@ -543,11 +551,12 @@ export function GameContainer() {
       <div className="game-content">
         <div className="opponent-area">
           <HandArea
-            cards={player2.hand.getCards()}
+            cards={hasGameStarted ? player2.hand.getCards() : []}
             selectedCard={isPlayer1Turn ? null : selectedCard}
             onCardClick={handleCardSelect}
             label="上側の手札"
             isOpponent={isPlayer1Turn}
+            disabled={!hasGameStarted}
           />
         </div>
 
@@ -566,6 +575,7 @@ export function GameContainer() {
                 showCancelIcons={placementHistory.length > 0}
                 onCancelCard={handleCancelCard}
                 placementHistory={placementHistory}
+                disabled={!hasGameStarted}
               />
               <div className="info-display-area">
                 {isBoardFull && placementHistory.length === 0 && (
@@ -594,6 +604,7 @@ export function GameContainer() {
               onClaimCombo={handleClaimCombo}
               onEndTurn={handleEndTurn}
               isGameOver={isGameOver}
+              disabled={!hasGameStarted}
             />
             <ComboRulesPanel />
           </div>
@@ -601,11 +612,12 @@ export function GameContainer() {
 
         <div className="player-area">
           <HandArea
-            cards={player1.hand.getCards()}
+            cards={hasGameStarted ? player1.hand.getCards() : []}
             selectedCard={isPlayer1Turn ? selectedCard : null}
             onCardClick={handleCardSelect}
             label="下側の手札"
             isOpponent={!isPlayer1Turn}
+            disabled={!hasGameStarted}
           />
           <CommentaryArea messages={messages} />
         </div>

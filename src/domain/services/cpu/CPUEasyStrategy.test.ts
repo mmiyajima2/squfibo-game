@@ -50,7 +50,6 @@ describe('CPUEasyStrategy', () => {
       // 1+4+16の役を作る
       const pos1 = Position.of(0, 0);
       const pos2 = Position.of(0, 1);
-      const pos3 = Position.of(0, 2);
 
       game.placeCard(new Card(CardValue.of(1), CardColor.RED), pos1);
       game.placeCard(new Card(CardValue.of(4), CardColor.RED), pos2);
@@ -62,7 +61,6 @@ describe('CPUEasyStrategy', () => {
 
       // THREE_CARDSが検出される状況で複数回実行
       let threeCardsClaimedCount = 0;
-      let totalAttempts = 0;
 
       // 見落としがあるため、複数回試行
       for (let i = 0; i < 20; i++) {
@@ -80,9 +78,6 @@ describe('CPUEasyStrategy', () => {
         // THREE_CARDSが検出されたかチェック
         if (result.claimedCombo?.type === ComboType.THREE_CARDS) {
           threeCardsClaimedCount++;
-        }
-        if (result.claimedCombo || result.missedCombo) {
-          totalAttempts++;
         }
       }
 
@@ -103,7 +98,6 @@ describe('CPUEasyStrategy', () => {
 
         // 1+4の役を作る
         const pos1 = Position.of(0, 0);
-        const pos2 = Position.of(0, 1);
 
         game.placeCard(new Card(CardValue.of(1), CardColor.RED), pos1);
 

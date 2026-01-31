@@ -1,6 +1,21 @@
 
 # バグ
 
+## [x] 画面表示で、手札がすでにあって配置できるのはおかしい
+- ゲーム開始ボタンから、モーダルを経た場合のみゲームが開始されるべき
+- それまでは手札もなく、そのエリアも非活性がよいかもしれない
+- **【完了】修正内容：**
+  - `useGameState.ts`に`hasGameStarted`フラグを追加（初期値false）
+  - `RESET_GAME`アクション実行時に`hasGameStarted`をtrueに設定
+  - `GameContainer.tsx`でゲーム未開始時の動作を制御：
+    - HandAreaに空配列を渡し、手札を非表示に
+    - HandArea、BoardGrid、ControlPanelに`disabled`プロパティを追加
+    - ゲーム未開始時は全ての操作を無効化
+  - CSS（HandArea.css、BoardGrid.css）に非活性状態のスタイルを追加
+  - 初回アクセス時に「新しいゲームボタンを押してください」というメッセージを表示
+  - 既存のビルドエラー（CommentaryType、未使用変数）も修正
+  - 全109テスト成功
+
 ## [x] ターンの切り替えがおかしい場合がある
 - 人間（下側）が、先攻
 - 人間が手札をおく

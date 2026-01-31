@@ -10,6 +10,7 @@ interface HandAreaProps {
   showDeleteIcons?: boolean;
   label?: string;
   isOpponent?: boolean;
+  disabled?: boolean;
 }
 
 export function HandArea({
@@ -20,9 +21,10 @@ export function HandArea({
   showDeleteIcons = false,
   label,
   isOpponent = false,
+  disabled = false,
 }: HandAreaProps) {
   const handleCardClick = (card: Card) => {
-    if (onCardClick && !isOpponent) {
+    if (onCardClick && !isOpponent && !disabled) {
       onCardClick(card);
     }
   };
@@ -34,7 +36,7 @@ export function HandArea({
   };
 
   return (
-    <div className={`hand-area ${isOpponent ? 'hand-area-opponent' : ''}`}>
+    <div className={`hand-area ${isOpponent ? 'hand-area-opponent' : ''} ${disabled ? 'hand-area-disabled' : ''}`}>
       {label && <div className="hand-area-label">{label}</div>}
       <div className="hand-cards">
         {cards.length === 0 ? (

@@ -47,3 +47,12 @@
 .hand-area-opponent .hand-card-wrapper {
   pointer-events: none;
 }
+
+.hand-area-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.hand-area-disabled .hand-cards {
+  filter: grayscale(0.3);
+}
