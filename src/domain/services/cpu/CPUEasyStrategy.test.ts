@@ -148,4 +148,51 @@ describe('CPUEasyStrategy', () => {
       expect(positionCounts.size).toBeGreaterThan(3);
     });
   });
+
+  describe('直前に配置されたカードの保護', () => {
+    it('盤面満杯時、CPUは直前のターンで配置されたカードを除去しない', () => {
+      const game = Game.createNewGame('Easy', true); // 人間が先攻
+      const strategy = new CPUEasyStrategy();
+
+      // 盤面を8枚で埋める（満杯の一歩手前）
+      const positions = [
+        Position.of(0, 0),
+        Position.of(0, 1),
+        Position.of(0, 2),
+        Position.of(1, 0),
+        Position.of(1, 1),
+        Position.of(1, 2),
+        Position.of(2, 0),
+        Position.of(2, 1),
+        // Position.of(2, 2) は空けておく
+      ];
+
+      for (const pos of positions) {
+        const card = new Card(CardValue.of(1), CardColor.RED);
+        game.placeCard(card, pos);
+      }
+
+      // 人間プレイヤーが最後のマスにカードを配置
+      const humanPlayer = game.getCurrentPlayer();
+      const humanCard = humanPlayer.hand.getCards()[0];
+      const humanPlayedCard = humanPlayer.playCard(humanCard);
+      const humanPlacedPos = Position.of(2, 2);
+      game.placeCard(humanPlayedCard, humanPlacedPos);
+
+      // ターン終了（CPUのターンへ）
+      game.endTurn();
+
+      // CPUがターンを実行（盤面が満杯なので1枚除去してから配置）
+      const result = strategy.executeTurn(game);
+
+      // 除去されたカードが人間が置いたカード(2,2)ではないことを確認
+      expect(result.removedPosition).toBeDefined();
+      if (result.removedPosition) {
+        expect(result.removedPosition.equals(humanPlacedPos)).toBe(false);
+      }
+
+      // 除去された位置が、人間が置いた位置以外の8箇所のいずれかであることを確認
+      expect(positions.some(pos => pos.equals(result.removedPosition!))).toBe(true);
+    });
+  });
 });

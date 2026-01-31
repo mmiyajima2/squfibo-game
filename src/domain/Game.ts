@@ -15,6 +15,7 @@ export enum GameState {
 
 export class Game {
   private lastAutoDrawnPlayerId: string | null = null;
+  private lastPlacedPosition: Position | null = null;
 
   private constructor(
     public readonly board: Board,
@@ -71,6 +72,7 @@ export class Game {
     }
 
     this.board.placeCard(card, position);
+    this.lastPlacedPosition = position;
   }
 
   discardFromBoard(position: Position): void {
@@ -106,6 +108,7 @@ export class Game {
     const drawnCard = this.deck.draw();
     if (drawnCard) {
       this.board.placeCard(drawnCard, position);
+      this.lastPlacedPosition = position;
     }
     return drawnCard;
   }
@@ -221,6 +224,10 @@ export class Game {
 
   clearAutoDrawFlag(): void {
     this.lastAutoDrawnPlayerId = null;
+  }
+
+  getLastPlacedPosition(): Position | null {
+    return this.lastPlacedPosition;
   }
 
   /**

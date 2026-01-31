@@ -22,7 +22,9 @@ export class CPUEasyStrategy implements CPUStrategy {
 
     // ステップ1: 盤面満杯の場合、ランダムに1枚除去
     if (game.board.isFull()) {
-      removedPosition = this.selectRandomOccupiedPosition(game);
+      // 直前のターンで配置されたカードは除去しない（公平性のため）
+      const excludePosition = game.getLastPlacedPosition();
+      removedPosition = this.selectRandomOccupiedPosition(game, excludePosition);
       game.discardFromBoard(removedPosition);
     }
 
@@ -214,20 +216,29 @@ export class CPUEasyStrategy implements CPUStrategy {
    * 盤面からランダムに占有されている位置を選択する
    *
    * @param game 現在のゲーム状態
+   * @param excludePosition 除外する位置（直前のターンで配置されたカードなど）
    * @returns ランダムに選ばれた占有されている位置
    */
-  private selectRandomOccupiedPosition(game: Game): Position {
+  private selectRandomOccupiedPosition(game: Game, excludePosition: Position | null = null): Position {
     const occupiedPositions: Position[] = [];
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
         const position = Position.of(row, col);
+        // 空でなく、除外位置でもない場合のみ追加
         if (!game.board.isEmpty(position)) {
-          occupiedPositions.push(position);
+          if (excludePosition === null || !position.equals(excludePosition)) {
+            occupiedPositions.push(position);
+          }
         }
       }
     }
 
     if (occupiedPositions.length === 0) {
+      // 除外位置以外に選択肢がない場合は、除外位置を返す
+      // （盤面が1枚しかないなど極端なケース対策）
+      if (excludePosition !== null && !game.board.isEmpty(excludePosition)) {
+        return excludePosition;
+      }
       throw new Error('No occupied positions available');
     }
 
