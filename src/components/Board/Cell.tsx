@@ -8,6 +8,7 @@ interface CellProps {
   card: Card | null;
   isHighlighted?: boolean;
   isSelected?: boolean;
+  isInCombo?: boolean;
   onClick?: () => void;
   onCardClick?: (card: Card) => void;
   showDeleteIcon?: boolean;
@@ -22,6 +23,7 @@ export function Cell({
   card,
   isHighlighted = false,
   isSelected = false,
+  isInCombo = false,
   onClick,
   onCardClick,
   showDeleteIcon = false,
@@ -53,7 +55,8 @@ export function Cell({
   const classNames = [
     'cell',
     isHighlighted ? 'cell-highlighted' : '',
-    isSelected ? 'cell-selected' : '',
+    isSelected && !isInCombo ? 'cell-selected' : '',
+    isInCombo ? 'cell-in-combo' : '',
     (onClick && !card) || (card && onCardClick) ? 'cell-clickable' : '',
   ]
     .filter(Boolean)
@@ -65,6 +68,7 @@ export function Cell({
         <CardComponent
           card={card}
           size="large"
+          isInCombo={isInCombo}
           showDeleteIcon={showDeleteIcon}
           onDelete={handleDeleteCard}
           showCancelIcon={showCancelIcon}

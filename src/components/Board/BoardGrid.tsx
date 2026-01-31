@@ -13,6 +13,7 @@ interface BoardGridProps {
   board: Board;
   highlightedPositions?: Position[];
   selectedCards?: Card[];
+  isValidCombo?: boolean;
   onCellClick?: (position: Position) => void;
   onCardClick?: (card: Card) => void;
   showDeleteIcons?: boolean;
@@ -27,6 +28,7 @@ export function BoardGrid({
   board,
   highlightedPositions = [],
   selectedCards = [],
+  isValidCombo = false,
   onCellClick,
   onCardClick,
   showDeleteIcons = false,
@@ -72,6 +74,7 @@ export function BoardGrid({
                 card={card}
                 isHighlighted={isHighlighted(position)}
                 isSelected={isSelected(card)}
+                isInCombo={isSelected(card) && isValidCombo}
                 onClick={() => handleCellClick(position)}
                 onCardClick={onCardClick}
                 showDeleteIcon={showDeleteIcons && card !== null}

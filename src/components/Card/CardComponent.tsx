@@ -6,6 +6,7 @@ interface CardComponentProps {
   card: Card;
   isSelected?: boolean;
   isHighlighted?: boolean;
+  isInCombo?: boolean;
   onClick?: () => void;
   size?: 'small' | 'medium' | 'large';
   showDeleteIcon?: boolean;
@@ -19,6 +20,7 @@ export function CardComponent({
   card,
   isSelected = false,
   isHighlighted = false,
+  isInCombo = false,
   onClick,
   size = 'medium',
   showDeleteIcon = false,
@@ -33,7 +35,8 @@ export function CardComponent({
   const classNames = [
     'card-component',
     `card-size-${size}`,
-    isSelected ? 'card-selected' : '',
+    isSelected && !isInCombo ? 'card-selected' : '',
+    isInCombo ? 'card-in-combo' : '',
     isHighlighted ? 'card-highlighted' : '',
     onClick ? 'card-clickable' : '',
     showDeleteIcon ? 'card-with-delete' : '',
@@ -64,8 +67,8 @@ export function CardComponent({
         alt={`${colorName} ${card.value.value}`}
         className="card-image"
       />
-      {isSelected && (
-        <div className="card-selected-indicator">✓</div>
+      {(isSelected || isInCombo) && (
+        <div className={isInCombo ? "card-combo-indicator" : "card-selected-indicator"}>✓</div>
       )}
       {showDeleteIcon && (
         <button

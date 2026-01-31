@@ -22,7 +22,7 @@ import './GameContainer.css';
 import '../ComboRules/ComboRulesPanel.css';
 
 export function GameContainer() {
-  const { game, version, currentPlayerIndex, hasGameStarted, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn, executeCPUStep } = useGameState();
+  const { game, version, currentPlayerIndex, hasGameStarted, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUStep } = useGameState();
   const {
     selectedCard,
     selectCard,
@@ -49,6 +49,27 @@ export function GameContainer() {
   const comboDetector = useMemo(() => new ComboDetector(), []);
   const currentPlayer = game.getCurrentPlayer();
   const isPlayer1Turn = currentPlayer.id === 'player1';
+
+  // 選択されたカードが役を形成しているか検証
+  const isValidCombo = useMemo(() => {
+    if (selectedBoardCards.length < 2 || selectedBoardCards.length > 3) {
+      return false;
+    }
+
+    const positions: Position[] = [];
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const pos = Position.of(row, col);
+        const card = game.board.getCard(pos);
+        if (card && selectedBoardCards.some(sc => sc.id === card.id)) {
+          positions.push(pos);
+        }
+      }
+    }
+
+    const verifiedComboType = comboDetector.checkCombo(selectedBoardCards, positions);
+    return verifiedComboType !== null;
+  }, [selectedBoardCards, game.board, comboDetector]);
 
   // StrictModeでの二重実行を防ぐためのref
   const hasInitialized = useRef(false);
@@ -656,6 +677,7 @@ export function GameContainer() {
                 board={game.board}
                 highlightedPositions={highlightedPositions}
                 selectedCards={selectedBoardCards}
+                isValidCombo={isValidCombo}
                 onCellClick={handleCellClick}
                 onCardClick={toggleBoardCardSelection}
                 showDeleteIcons={isBoardFull && !isGameOver && placementHistory.length === 0}
