@@ -4,6 +4,7 @@ import { Player } from './entities/Player';
 import { Card } from './entities/Card';
 import { Position } from './valueObjects/Position';
 import { Combo, isClearingCombo } from './services/Combo';
+import type { CPUDifficulty } from '../types/CPUDifficulty';
 
 export enum GameState {
   PLAYING = 'PLAYING',
@@ -20,15 +21,16 @@ export class Game {
     private currentPlayerIndex: 0 | 1,
     private totalStars: number,
     private discardPile: Card[],
-    private gameState: GameState
+    private gameState: GameState,
+    public readonly cpuDifficulty?: CPUDifficulty
   ) {}
 
-  static createNewGame(): Game {
+  static createNewGame(cpuDifficulty?: CPUDifficulty): Game {
     const deck = Deck.createInitialDeck();
     deck.shuffle();
 
     const player1 = new Player('player1');
-    const player2 = new Player('player2');
+    const player2 = new Player('player2', cpuDifficulty);
 
     for (let i = 0; i < 13; i++) {
       const card1 = deck.draw();
@@ -44,7 +46,8 @@ export class Game {
       0,
       34,
       [],
-      GameState.PLAYING
+      GameState.PLAYING,
+      cpuDifficulty || 'Easy'
     );
   }
 

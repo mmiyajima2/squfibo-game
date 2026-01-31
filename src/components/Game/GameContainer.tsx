@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useUIState } from '../../hooks/useUIState';
 import { useCommentary } from '../../hooks/useCommentary';
@@ -14,6 +14,8 @@ import { CommentaryArea } from '../Commentary/CommentaryArea';
 import { ComboRulesPanel } from '../ComboRules/ComboRulesPanel';
 import { ControlPanel } from './ControlPanel';
 import { CommentaryBuilder } from '../../types/Commentary';
+import type { CPUDifficulty } from '../../types/CPUDifficulty';
+import { CPU_DIFFICULTY_LABELS, CPU_DIFFICULTY_ENABLED } from '../../types/CPUDifficulty';
 import './GameContainer.css';
 import '../ComboRules/ComboRulesPanel.css';
 
@@ -37,6 +39,9 @@ export function GameContainer() {
     clearPlacementHistory
   } = useUIState();
   const { messages, addMessage, updateCurrent, clearMessages } = useCommentary();
+
+  const [showDifficultyModal, setShowDifficultyModal] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<CPUDifficulty>('Easy');
 
   const comboDetector = useMemo(() => new ComboDetector(), []);
   const currentPlayer = game.getCurrentPlayer();
@@ -231,7 +236,12 @@ export function GameContainer() {
   };
 
   const handleResetGame = () => {
-    resetGame();
+    setShowDifficultyModal(true);
+  };
+
+  const handleStartGameWithDifficulty = (difficulty: CPUDifficulty) => {
+    setShowDifficultyModal(false);
+    resetGame(difficulty);
     clearMessages();
     addMessage(CommentaryBuilder.gameStart());
     updateCurrent('下側のターンです');
@@ -239,6 +249,11 @@ export function GameContainer() {
     clearHighlight();
     clearBoardCardSelection();
     clearPlacementHistory();
+  };
+
+  const handleCancelDifficultySelection = () => {
+    setShowDifficultyModal(false);
+    setSelectedDifficulty('Easy');
   };
 
   const handleCancelCard = (position: Position) => {
@@ -406,6 +421,45 @@ export function GameContainer() {
             <button className="new-game-button" onClick={handleResetGame}>
               新しいゲーム
             </button>
+          </div>
+        </div>
+      )}
+      {showDifficultyModal && (
+        <div className="difficulty-modal">
+          <div className="difficulty-modal-content">
+            <h2>CPU難易度を選択</h2>
+            <div className="difficulty-buttons">
+              {(['Easy', 'Normal', 'Hard'] as CPUDifficulty[]).map((difficulty) => {
+                const isEnabled = CPU_DIFFICULTY_ENABLED[difficulty];
+                const isSelected = selectedDifficulty === difficulty;
+
+                return (
+                  <button
+                    key={difficulty}
+                    className={`difficulty-button ${isSelected ? 'selected' : ''} ${!isEnabled ? 'disabled' : ''}`}
+                    onClick={() => isEnabled && setSelectedDifficulty(difficulty)}
+                    disabled={!isEnabled}
+                  >
+                    {CPU_DIFFICULTY_LABELS[difficulty]}
+                    {!isEnabled && <span className="coming-soon">（準備中）</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="difficulty-modal-actions">
+              <button
+                className="difficulty-cancel-button"
+                onClick={handleCancelDifficultySelection}
+              >
+                キャンセル
+              </button>
+              <button
+                className="difficulty-start-button"
+                onClick={() => handleStartGameWithDifficulty(selectedDifficulty)}
+              >
+                ゲーム開始
+              </button>
+            </div>
           </div>
         </div>
       )}

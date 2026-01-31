@@ -1,11 +1,15 @@
 import { Hand } from './Hand';
 import { Card } from './Card';
+import type { CPUDifficulty } from '../../types/CPUDifficulty';
 
 export class Player {
   public readonly hand: Hand;
   private _stars: number = 0;
 
-  constructor(public readonly id: string) {
+  constructor(
+    public readonly id: string,
+    public readonly cpuDifficulty?: CPUDifficulty
+  ) {
     this.hand = new Hand();
   }
 
@@ -23,5 +27,9 @@ export class Player {
 
   playCard(card: Card): Card {
     return this.hand.removeCard(card);
+  }
+
+  isCPU(): boolean {
+    return this.cpuDifficulty !== undefined;
   }
 }
