@@ -15,6 +15,7 @@ interface GameStateHook {
   drawAndPlaceCard: (position: Position) => Card | null;
   resetGame: (cpuDifficulty?: CPUDifficulty, playerGoesFirst?: boolean) => void;
   cancelPlacement: (position: Position) => void;
+  executeCPUTurn: () => void;
 }
 
 type GameAction =
@@ -25,7 +26,8 @@ type GameAction =
   | { type: 'DISCARD_FROM_HAND'; card: Card }
   | { type: 'DRAW_AND_PLACE'; position: Position }
   | { type: 'RESET_GAME'; cpuDifficulty?: CPUDifficulty; playerGoesFirst?: boolean }
-  | { type: 'CANCEL_PLACEMENT'; position: Position };
+  | { type: 'CANCEL_PLACEMENT'; position: Position }
+  | { type: 'EXECUTE_CPU_TURN' };
 
 interface GameStateWrapper {
   game: Game;
@@ -139,6 +141,29 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot };
     }
 
+    case 'EXECUTE_CPU_TURN': {
+      const currentPlayer = game.getCurrentPlayer();
+
+      // React Strict Modeの二重実行対策: CPUでない場合や、既にターンが切り替わっている場合はスキップ
+      if (!currentPlayer.isCPU()) {
+        return state;
+      }
+
+      const beforeIndex = currentPlayer.id === 'player1' ? 0 : 1;
+
+      // スナップショットと一致しない場合は既に実行済み
+      if (beforeIndex !== state.currentPlayerIndexSnapshot) {
+        return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: beforeIndex as 0 | 1 };
+      }
+
+      // CPUターンを実行
+      game.executeCPUTurn();
+
+      // executeCPUTurn内部でendTurn()が呼ばれるため、ターンが切り替わっている
+      const afterIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+      return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
+    }
+
     default:
       return state;
   }
@@ -201,6 +226,10 @@ export function useGameState(): GameStateHook {
     dispatch({ type: 'CANCEL_PLACEMENT', position });
   }, []);
 
+  const executeCPUTurn = useCallback(() => {
+    dispatch({ type: 'EXECUTE_CPU_TURN' });
+  }, []);
+
   return {
     game: state.game,
     placeCardFromHand,
@@ -211,5 +240,6 @@ export function useGameState(): GameStateHook {
     drawAndPlaceCard,
     resetGame,
     cancelPlacement,
+    executeCPUTurn,
   };
 }

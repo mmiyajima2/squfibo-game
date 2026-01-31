@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useUIState } from '../../hooks/useUIState';
 import { useCommentary } from '../../hooks/useCommentary';
@@ -20,7 +20,7 @@ import './GameContainer.css';
 import '../ComboRules/ComboRulesPanel.css';
 
 export function GameContainer() {
-  const { game, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement } = useGameState();
+  const { game, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn } = useGameState();
   const {
     selectedCard,
     selectCard,
@@ -100,6 +100,39 @@ export function GameContainer() {
     }
     prevIsPlayer1Turn.current = isPlayer1Turn;
   }, [isPlayer1Turn, addMessage, updateCurrent, clearPlacementHistory, game]);
+
+  // CPUターンの自動実行
+  useEffect(() => {
+    const currentPlayer = game.getCurrentPlayer();
+
+    // ゲームオーバー時やCPUでない場合はスキップ
+    if (game.isGameOver() || !currentPlayer.isCPU()) {
+      return;
+    }
+
+    // CPUターンを遅延実行（UX向上のため）
+    const timer = setTimeout(() => {
+      try {
+        executeCPUTurn();
+
+        // CPUの行動を実況に追加
+        const cpuPlayerName = currentPlayer.id === 'player1' ? '下側' : '上側';
+        addMessage(
+          CommentaryBuilder.createMessage(
+            'cpu',
+            '🤖',
+            `${cpuPlayerName}（CPU）がターンを実行しました`
+          )
+        );
+      } catch (error) {
+        console.error('CPU turn execution failed:', error);
+        showError('CPUのターン実行に失敗しました');
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [game, executeCPUTurn, addMessage, showError]);
+
 
   const handleCardSelect = (card: Card) => {
     if (selectedCard?.equals(card)) {
