@@ -25,16 +25,17 @@ export class CPUEasyStrategy implements CPUStrategy {
   planTurn(game: Game): CPUTurnPlan {
     const steps: CPUActionStep[] = [];
     let missedCombo: Combo | null = null;
+    let removedPosition: Position | undefined;
 
     // ステップ1（オプション）: 盤面満杯の場合、ランダムに1枚除去
     if (game.board.isFull()) {
       const excludePosition = game.getLastPlacedPosition();
-      const removedPosition = this.selectRandomOccupiedPosition(game, excludePosition);
+      removedPosition = this.selectRandomOccupiedPosition(game, excludePosition);
       steps.push({ type: 'REMOVE_CARD', position: removedPosition });
     }
 
     // ステップ2: カード配置を決定
-    const { card, position } = this.decidePlacement(game);
+    const { card, position } = this.decidePlacement(game, removedPosition);
 
     if (card !== null) {
       // 手札からカードを出して配置
@@ -130,11 +131,12 @@ export class CPUEasyStrategy implements CPUStrategy {
    * - 手札がない場合：空きマスをランダムに選択（山札から引いて配置する準備）
    *
    * @param game 現在のゲーム状態
+   * @param removedPosition 除去予定の位置（planTurn時のみ使用）
    * @returns 配置するカードと位置（手札がない場合はcard: null）
    */
-  private decidePlacement(game: Game): { card: Card | null; position: Position } {
+  private decidePlacement(game: Game, removedPosition?: Position): { card: Card | null; position: Position } {
     const currentPlayer = game.getCurrentPlayer();
-    const emptyPositions = this.getEmptyPositions(game);
+    const emptyPositions = this.getEmptyPositions(game, removedPosition);
 
     if (emptyPositions.length === 0) {
       throw new Error('No empty positions available');
@@ -228,14 +230,16 @@ export class CPUEasyStrategy implements CPUStrategy {
    * 空いている位置のリストを取得する
    *
    * @param game 現在のゲーム状態
+   * @param removedPosition 除去予定の位置（この位置は空きとして扱う）
    * @returns 空いている位置のリスト
    */
-  private getEmptyPositions(game: Game): Position[] {
+  private getEmptyPositions(game: Game, removedPosition?: Position): Position[] {
     const emptyPositions: Position[] = [];
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
         const position = Position.of(row, col);
-        if (game.board.isEmpty(position)) {
+        // 実際に空いているか、除去予定の位置の場合は空きとして扱う
+        if (game.board.isEmpty(position) || (removedPosition && position.equals(removedPosition))) {
           emptyPositions.push(position);
         }
       }

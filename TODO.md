@@ -1,6 +1,24 @@
 
 # バグ
 
+## [x] 盤面満杯のときCPUのターンだとエラーなので解消が必要
+- 以下のエラーがコンソールログにでる
+```txt
+GameContainer.tsx:226 CPU turn planning failed: Error: No empty positions available
+    at CPUEasyStrategy.decidePlacement (CPUEasyStrategy.ts:140:13)
+    at CPUEasyStrategy.planTurn (CPUEasyStrategy.ts:37:37)
+    at GameContainer.tsx:218:31
+(anonymous) @ GameContainer.tsx:226
+
+```
+- **【完了】修正内容：**
+  - `CPUEasyStrategy.ts`の`planTurn()`メソッドを修正
+  - 問題：盤面満杯時に除去を「計画」しても実際には除去されていないため、`decidePlacement()`で空きがなくエラーが発生
+  - 修正：`decidePlacement()`と`getEmptyPositions()`に除去予定の位置を引数として渡し、その位置を空きとして扱うように変更
+  - `planTurn()`で除去予定位置を`decidePlacement(removedPosition)`に渡す
+  - `getEmptyPositions()`で除去予定位置を空きとして扱う
+  - 全109テスト成功
+
 ## [x] ターンの切り替えがおかしい場合がある(再2)
 - 人間（下側）が、先攻
 - 人間が手札をおく
