@@ -4,6 +4,7 @@ import { Card } from '../domain/entities/Card';
 import { Position } from '../domain/valueObjects/Position';
 import { Combo } from '../domain/services/Combo';
 import type { CPUDifficulty } from '../types/CPUDifficulty';
+import type { CPUActionStep } from '../domain/services/cpu';
 
 interface GameStateHook {
   game: Game;
@@ -19,6 +20,7 @@ interface GameStateHook {
   resetGame: (cpuDifficulty?: CPUDifficulty, playerGoesFirst?: boolean) => void;
   cancelPlacement: (position: Position) => void;
   executeCPUTurn: () => void;
+  executeCPUStep: (step: CPUActionStep) => void;
 }
 
 type GameAction =
@@ -30,7 +32,8 @@ type GameAction =
   | { type: 'DRAW_AND_PLACE'; position: Position }
   | { type: 'RESET_GAME'; cpuDifficulty?: CPUDifficulty; playerGoesFirst?: boolean }
   | { type: 'CANCEL_PLACEMENT'; position: Position }
-  | { type: 'EXECUTE_CPU_TURN' };
+  | { type: 'EXECUTE_CPU_TURN' }
+  | { type: 'EXECUTE_CPU_STEP'; step: CPUActionStep };
 
 interface GameStateWrapper {
   game: Game;
@@ -194,6 +197,67 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1, hasGameStarted: state.hasGameStarted };
     }
 
+    case 'EXECUTE_CPU_STEP': {
+      const step = action.step;
+      const currentPlayer = game.getCurrentPlayer();
+
+      console.log('[EXECUTE_CPU_STEP] Executing step', { stepType: step.type });
+
+      switch (step.type) {
+        case 'REMOVE_CARD': {
+          if (game.board.isEmpty(step.position)) {
+            return state;
+          }
+          game.discardFromBoard(step.position);
+          return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
+        }
+
+        case 'PLACE_CARD': {
+          if (!game.board.isEmpty(step.position)) {
+            return state;
+          }
+
+          if (step.isFromDeck) {
+            game.drawAndPlaceCard(step.position);
+          } else {
+            const cardInHand = currentPlayer.hand.getCards().find(c => c.id === step.card.id);
+            if (!cardInHand) {
+              return state;
+            }
+            currentPlayer.playCard(cardInHand);
+            game.placeCard(cardInHand, step.position);
+          }
+          return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
+        }
+
+        case 'CLAIM_COMBO': {
+          const hasCardsAtPositions = step.combo.positions.some(pos => !game.board.isEmpty(pos));
+          if (!hasCardsAtPositions) {
+            const currentIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+            return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: currentIndex as 0 | 1 };
+          }
+
+          game.claimCombo(step.combo);
+          return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: state.currentPlayerIndexSnapshot, hasGameStarted: state.hasGameStarted };
+        }
+
+        case 'END_TURN': {
+          const beforeIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+
+          if (beforeIndex !== state.currentPlayerIndexSnapshot) {
+            return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: beforeIndex as 0 | 1 };
+          }
+
+          game.endTurn();
+          const afterIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+          return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1, hasGameStarted: state.hasGameStarted };
+        }
+
+        default:
+          return state;
+      }
+    }
+
     default:
       return state;
   }
@@ -261,6 +325,10 @@ export function useGameState(): GameStateHook {
     dispatch({ type: 'EXECUTE_CPU_TURN' });
   }, []);
 
+  const executeCPUStep = useCallback((step: CPUActionStep) => {
+    dispatch({ type: 'EXECUTE_CPU_STEP', step });
+  }, []);
+
   return {
     game: state.game,
     version: state.version,
@@ -275,5 +343,6 @@ export function useGameState(): GameStateHook {
     resetGame,
     cancelPlacement,
     executeCPUTurn,
+    executeCPUStep,
   };
 }

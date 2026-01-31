@@ -3,7 +3,7 @@ import { Position } from '../../valueObjects/Position';
 import { Combo, ComboType } from '../Combo';
 import { ComboDetector } from '../ComboDetector';
 import type { Game } from '../../Game';
-import type { CPUStrategy, CPUTurnResult } from './CPUStrategy';
+import type { CPUStrategy, CPUTurnResult, CPUTurnPlan, CPUActionStep } from './CPUStrategy';
 
 /**
  * CPU（Easy）戦略の実装
@@ -15,6 +15,57 @@ import type { CPUStrategy, CPUTurnResult } from './CPUStrategy';
  */
 export class CPUEasyStrategy implements CPUStrategy {
   private readonly comboDetector = new ComboDetector();
+
+  /**
+   * CPUの1ターンを計画する（状態変更なし）
+   *
+   * @param game 現在のゲーム状態
+   * @returns ターン実行計画
+   */
+  planTurn(game: Game): CPUTurnPlan {
+    const steps: CPUActionStep[] = [];
+    let missedCombo: Combo | null = null;
+
+    // ステップ1（オプション）: 盤面満杯の場合、ランダムに1枚除去
+    if (game.board.isFull()) {
+      const excludePosition = game.getLastPlacedPosition();
+      const removedPosition = this.selectRandomOccupiedPosition(game, excludePosition);
+      steps.push({ type: 'REMOVE_CARD', position: removedPosition });
+    }
+
+    // ステップ2: カード配置を決定
+    const { card, position } = this.decidePlacement(game);
+
+    if (card !== null) {
+      // 手札からカードを出して配置
+      steps.push({ type: 'PLACE_CARD', card, position, isFromDeck: false });
+    } else {
+      // 手札がない場合は山札から引いて配置
+      const deckCard = game.deck.peek();
+      if (!deckCard) {
+        throw new Error('Deck is empty');
+      }
+      steps.push({ type: 'PLACE_CARD', card: deckCard, position, isFromDeck: true });
+    }
+
+    // ステップ3: 役の検出（将来の盤面状態をシミュレート）
+    // 注: 実際の状態変更なしで検出するため、配置カードの位置を使う
+    const detectedCombos = this.comboDetector.detectCombos(game.board, position);
+
+    // ステップ4: 役の申告判定
+    const { claimedCombo, missedCombo: missed } = this.decideCombo(detectedCombos);
+
+    if (claimedCombo) {
+      steps.push({ type: 'CLAIM_COMBO', combo: claimedCombo });
+    }
+
+    missedCombo = missed;
+
+    // ステップ5: ターン終了
+    steps.push({ type: 'END_TURN' });
+
+    return { steps, missedCombo };
+  }
 
   executeTurn(game: Game): CPUTurnResult {
     const currentPlayer = game.getCurrentPlayer();

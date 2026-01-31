@@ -16,6 +16,10 @@ export class Deck {
     return this.cards.pop() || null;
   }
 
+  peek(): Card | null {
+    return this.cards.length > 0 ? this.cards[this.cards.length - 1] : null;
+  }
+
   isEmpty(): boolean {
     return this.cards.length === 0;
   }

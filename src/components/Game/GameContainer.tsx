@@ -16,11 +16,13 @@ import { ControlPanel } from './ControlPanel';
 import { CommentaryBuilder } from '../../types/Commentary';
 import type { CPUDifficulty } from '../../types/CPUDifficulty';
 import { CPU_DIFFICULTY_LABELS, CPU_DIFFICULTY_ENABLED } from '../../types/CPUDifficulty';
+import type { CPUActionStep, CPUTurnPlan } from '../../domain/services/cpu';
+import { CPUStrategyFactory } from '../../domain/services/cpu';
 import './GameContainer.css';
 import '../ComboRules/ComboRulesPanel.css';
 
 export function GameContainer() {
-  const { game, version, currentPlayerIndex, hasGameStarted, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn } = useGameState();
+  const { game, version, currentPlayerIndex, hasGameStarted, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn, executeCPUStep } = useGameState();
   const {
     selectedCard,
     selectCard,
@@ -50,6 +52,11 @@ export function GameContainer() {
 
   // StrictModeでの二重実行を防ぐためのref
   const hasInitialized = useRef(false);
+
+  // CPU実行状態の管理
+  const [isCPUExecuting, setIsCPUExecuting] = useState(false);
+  const [cpuStepsQueue, setCpuStepsQueue] = useState<CPUActionStep[]>([]);
+  const cpuPlanRef = useRef<CPUTurnPlan | null>(null);
 
   // 初回レンダリング時のメッセージ表示
   useEffect(() => {
@@ -105,48 +112,124 @@ export function GameContainer() {
     prevIsPlayer1Turn.current = isPlayer1Turn;
   }, [isPlayer1Turn, addMessage, updateCurrent, clearPlacementHistory, game]);
 
-  // CPUターンの自動実行
+  // CPUターンのステップ実行
+  const executeNextCPUStep = useCallback(() => {
+    if (cpuStepsQueue.length === 0) {
+      setIsCPUExecuting(false);
+      cpuPlanRef.current = null;
+      return;
+    }
+
+    const [nextStep, ...remainingSteps] = cpuStepsQueue;
+    const cpuPlayerName = game.getCurrentPlayer().id === 'player1' ? '下側' : '上側';
+
+    // 各ステップのメッセージと遅延
+    let message = '';
+    let delay = 0;
+
+    switch (nextStep.type) {
+      case 'REMOVE_CARD': {
+        const card = game.board.getCard(nextStep.position);
+        if (card) {
+          const cardColor = card.color === CardColor.RED ? '赤' : '青';
+          const cardValue = card.value.value;
+          message = `${cpuPlayerName}が盤面の${cardColor}${cardValue}を除去しました`;
+        }
+        delay = 1000;
+        break;
+      }
+
+      case 'PLACE_CARD': {
+        const cardColor = nextStep.card.color === CardColor.RED ? '赤' : '青';
+        const cardValue = nextStep.card.value.value;
+        message = `${cpuPlayerName}が${cardColor}${cardValue}を配置しました`;
+        delay = 1200;
+        break;
+      }
+
+      case 'CLAIM_COMBO': {
+        const comboName = getComboTypeName(nextStep.combo.type);
+        message = `${cpuPlayerName}が${comboName}を申告しました！`;
+        delay = 1500;
+        break;
+      }
+
+      case 'END_TURN': {
+        delay = 500;
+        break;
+      }
+    }
+
+    // メッセージがあれば追加
+    if (message) {
+      addMessage(CommentaryBuilder.createMessage('cpu', '🤖', message));
+    }
+
+    // ステップを実行
+    setTimeout(() => {
+      try {
+        executeCPUStep(nextStep);
+        setCpuStepsQueue(remainingSteps);
+      } catch (error) {
+        console.error('CPU step execution failed:', error);
+        showError('CPUのステップ実行に失敗しました');
+        setIsCPUExecuting(false);
+        setCpuStepsQueue([]);
+        cpuPlanRef.current = null;
+      }
+    }, delay);
+  }, [cpuStepsQueue, game, addMessage, executeCPUStep, showError]);
+
+  // CPUステップキューの監視
   useEffect(() => {
-    // currentPlayerIndexからプレイヤーを取得
+    if (isCPUExecuting && cpuStepsQueue.length > 0) {
+      executeNextCPUStep();
+    }
+  }, [isCPUExecuting, cpuStepsQueue, executeNextCPUStep]);
+
+  // CPUターンの自動開始
+  useEffect(() => {
     const currentPlayerInEffect = game.getCurrentPlayer();
-    const isCPU = currentPlayerIndex === 1; // player2 = CPU
+    const isCPU = currentPlayerInEffect.isCPU();
 
     console.log('[CPU Auto-Execute] useEffect fired', {
       version,
       currentPlayerIndex,
       currentPlayerId: currentPlayerInEffect.id,
       isCPU,
-      isGameOver: game.isGameOver()
+      isGameOver: game.isGameOver(),
+      isCPUExecuting
     });
 
-    // ゲームオーバー時やCPUでない場合はスキップ
-    if (game.isGameOver() || !isCPU) {
-      console.log('[CPU Auto-Execute] Skipped (game over or not CPU)');
+    // ゲームオーバー時、CPUでない場合、または既に実行中の場合はスキップ
+    if (game.isGameOver() || !isCPU || isCPUExecuting) {
+      console.log('[CPU Auto-Execute] Skipped', { isGameOver: game.isGameOver(), isCPU, isCPUExecuting });
       return;
     }
 
-    // CPUターンを遅延実行（UX向上のため）
+    // CPUターンの計画を立てる
     const timer = setTimeout(() => {
       try {
-        executeCPUTurn();
+        const cpuDifficulty = game.players.find(p => p.isCPU())?.id === 'player1'
+          ? (game as any).cpuDifficulty || 'Easy'
+          : (game as any).cpuDifficulty || 'Easy';
 
-        // CPUの行動を実況に追加
-        const cpuPlayerName = currentPlayerInEffect.id === 'player1' ? '下側' : '上側';
-        addMessage(
-          CommentaryBuilder.createMessage(
-            'cpu',
-            '🤖',
-            `${cpuPlayerName}（CPU）がターンを実行しました`
-          )
-        );
+        const strategy = CPUStrategyFactory.createStrategy(cpuDifficulty);
+        const plan = strategy.planTurn(game);
+
+        console.log('[CPU Auto-Execute] CPU plan created', { steps: plan.steps.length });
+
+        cpuPlanRef.current = plan;
+        setIsCPUExecuting(true);
+        setCpuStepsQueue(plan.steps);
       } catch (error) {
-        console.error('CPU turn execution failed:', error);
-        showError('CPUのターン実行に失敗しました');
+        console.error('CPU turn planning failed:', error);
+        showError('CPUのターン計画に失敗しました');
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [currentPlayerIndex, version, game, executeCPUTurn, addMessage, showError]);
+  }, [currentPlayerIndex, version, game, isCPUExecuting, showError]);
 
 
   const handleCardSelect = (card: Card) => {
@@ -303,6 +386,11 @@ export function GameContainer() {
     clearHighlight();
     clearBoardCardSelection();
     clearPlacementHistory();
+
+    // CPU実行状態をクリア
+    setIsCPUExecuting(false);
+    setCpuStepsQueue([]);
+    cpuPlanRef.current = null;
   };
 
   const handleCancelDifficultySelection = () => {

@@ -15,6 +15,23 @@ export interface CPUTurnResult {
 }
 
 /**
+ * CPUアクションのステップ型定義
+ */
+export type CPUActionStep =
+  | { type: 'REMOVE_CARD'; position: Position }
+  | { type: 'PLACE_CARD'; card: Card; position: Position; isFromDeck: boolean }
+  | { type: 'CLAIM_COMBO'; combo: Combo }
+  | { type: 'END_TURN' };
+
+/**
+ * CPUターンの実行計画（全ての意思決定を含む）
+ */
+export interface CPUTurnPlan {
+  steps: CPUActionStep[];
+  missedCombo?: Combo | null;
+}
+
+/**
  * CPU戦略の抽象インターフェース
  *
  * 各難易度の戦略は、このインターフェースを実装する。
@@ -28,4 +45,12 @@ export interface CPUStrategy {
    * @returns ターン実行結果
    */
   executeTurn(game: Game): CPUTurnResult;
+
+  /**
+   * CPUの1ターンを計画する（状態変更なし）
+   *
+   * @param game 現在のゲーム状態
+   * @returns ターン実行計画
+   */
+  planTurn(game: Game): CPUTurnPlan;
 }
