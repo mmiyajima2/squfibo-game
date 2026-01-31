@@ -5,6 +5,8 @@ import { Card } from './entities/Card';
 import { Position } from './valueObjects/Position';
 import { Combo, isClearingCombo } from './services/Combo';
 import type { CPUDifficulty } from '../types/CPUDifficulty';
+import { CPUStrategyFactory } from './services/cpu/CPUStrategyFactory';
+import type { CPUTurnResult } from './services/cpu/CPUStrategy';
 
 export enum GameState {
   PLAYING = 'PLAYING',
@@ -219,5 +221,35 @@ export class Game {
 
   clearAutoDrawFlag(): void {
     this.lastAutoDrawnPlayerId = null;
+  }
+
+  /**
+   * CPUのターンを実行する
+   *
+   * 現在のプレイヤーがCPUの場合のみ動作する。
+   * CPUの難易度に応じた戦略を使用してターンを実行し、
+   * カード配置と役の申告を自動で行う。
+   *
+   * @returns CPUターンの実行結果
+   * @throws 現在のプレイヤーがCPUでない場合はエラー
+   */
+  executeCPUTurn(): CPUTurnResult {
+    const currentPlayer = this.getCurrentPlayer();
+
+    if (!currentPlayer.isCPU()) {
+      throw new Error('Current player is not a CPU');
+    }
+
+    if (!currentPlayer.cpuDifficulty) {
+      throw new Error('CPU difficulty is not set');
+    }
+
+    // 難易度に応じた戦略を取得
+    const strategy = CPUStrategyFactory.createStrategy(currentPlayer.cpuDifficulty);
+
+    // CPUのターンを実行
+    const result = strategy.executeTurn(this);
+
+    return result;
   }
 }

@@ -571,4 +571,116 @@ describe('Game', () => {
       expect(game.getLastAutoDrawnPlayerId()).toBeNull();
     });
   });
+
+  describe('executeCPUTurn', () => {
+    it('should execute CPU turn when current player is CPU', () => {
+      const game = Game.createNewGame('Easy', false);
+      const cpuPlayer = game.getCurrentPlayer();
+
+      expect(cpuPlayer.isCPU()).toBe(true);
+
+      const result = game.executeCPUTurn();
+
+      expect(result.placedCard).toBeDefined();
+      expect(result.position).toBeDefined();
+      expect(game.board.getCard(result.position)).toBeDefined();
+    });
+
+    it('should throw error when current player is not CPU', () => {
+      const game = Game.createNewGame(undefined, true);
+      const humanPlayer = game.getCurrentPlayer();
+
+      expect(humanPlayer.isCPU()).toBe(false);
+      expect(() => game.executeCPUTurn()).toThrow('Current player is not a CPU');
+    });
+
+    it('should remove a card when board is full', () => {
+      const game = Game.createNewGame('Easy', false);
+
+      // 盤面を満杯にする
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const position = Position.of(row, col);
+          const card = new Card(CardValue.of(1), CardColor.RED);
+          game.board.placeCard(card, position);
+        }
+      }
+
+      expect(game.board.isFull()).toBe(true);
+
+      const result = game.executeCPUTurn();
+
+      expect(result.removedPosition).toBeDefined();
+      expect(result.placedCard).toBeDefined();
+      expect(game.board.isFull()).toBe(true);
+    });
+
+    it('should claim combo when detected', () => {
+      // 複数回試行して、役が申告される場合をテスト
+      let comboClaimedCount = 0;
+      let comboDetectedCount = 0;
+
+      for (let i = 0; i < 50; i++) {
+        const testGame = Game.createNewGame('Easy', false);
+        const testPlayer = testGame.getCurrentPlayer();
+
+        // 盤面を埋めて、必ず隣接する位置にカードが配置されるようにする
+        // pos(0,0)に1を配置
+        const pos1 = Position.of(0, 0);
+        testGame.placeCard(new Card(CardValue.of(1), CardColor.RED), pos1);
+
+        // 空いている位置を1つだけにして、確実に隣接する位置に配置されるようにする
+        const pos2 = Position.of(0, 1);
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 3; col++) {
+            const pos = Position.of(row, col);
+            if (!pos.equals(pos1) && !pos.equals(pos2)) {
+              testGame.placeCard(new Card(CardValue.of(9), CardColor.BLUE), pos);
+            }
+          }
+        }
+
+        // CPUの手札を空にして、4だけを持たせる
+        const handCards = [...testPlayer.hand.getCards()];
+        handCards.forEach(card => testPlayer.playCard(card));
+        testPlayer.hand.addCard(new Card(CardValue.of(4), CardColor.RED));
+
+        const result = testGame.executeCPUTurn();
+
+        // 役が検出されたかチェック
+        if (result.claimedCombo || result.missedCombo) {
+          comboDetectedCount++;
+          if (result.claimedCombo) {
+            comboClaimedCount++;
+          }
+        }
+      }
+
+      // 役が検出された回数が十分にあり、少なくとも1回は申告されているはず
+      expect(comboDetectedCount).toBeGreaterThan(0);
+      expect(comboClaimedCount).toBeGreaterThan(0);
+    });
+
+    it('should work with multiple consecutive CPU turns', () => {
+      const game = Game.createNewGame('Easy', false);
+
+      for (let i = 0; i < 5; i++) {
+        // 現在のプレイヤーがCPUの場合のみ実行
+        if (game.getCurrentPlayer().isCPU()) {
+          const result = game.executeCPUTurn();
+
+          expect(result.placedCard).toBeDefined();
+          expect(result.position).toBeDefined();
+        }
+
+        // ターン終了
+        game.endTurn();
+
+        // ゲームが終了していなければ続行
+        if (game.isGameOver()) {
+          break;
+        }
+      }
+    });
+  });
 });

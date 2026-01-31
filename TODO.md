@@ -1,5 +1,24 @@
 #　通常タスク
 
+## [x] CPU（Easy）を実装してほしい、まずはドメインレイヤーから
+- ./docs/cpu_easy_spec.mdが行動仕様書である
+- Easyからではあるが、その他の難易度の拡張性は考慮すること
+- 一人二役の自主稽古モードは提供しないので、その分岐の考慮は不要である
+- コントローラーレイヤは後回しとする
+- **【完了】実装内容：**
+  - `src/domain/services/cpu/`配下にCPU戦略を実装
+    - `CPUStrategy.ts`: 戦略インターフェース（Normal, Hard拡張に対応）
+    - `CPUEasyStrategy.ts`: Easy難易度の実装
+      - ランダムなカード配置（盤面満杯時はランダム除去）
+      - 役の優先順位選択（THREE_CARDS > TWO_CARDS_4_9 > TWO_CARDS_1_4 > CLEARING_YAKU）
+      - 20%の確率で役を見落とす機構
+    - `CPUStrategyFactory.ts`: 難易度に応じた戦略を生成
+  - `Game.executeCPUTurn()`メソッドを追加（CPUターン自動実行）
+  - ユニットテスト作成・全108テスト成功
+    - 見落とし率約20%の検証
+    - 優先順位選択の検証
+    - ランダム配置の検証
+
 ## [x] 新しいゲームをおしたら、CPUのモードが選べるようになってほしい
 - Easy, Normal, Hardの３タイプを用意してほしい
 - 現在は、Easyだけを活性としあとは非活性としてほしい
