@@ -13,7 +13,7 @@ interface GameStateHook {
   discardFromBoard: (position: Position) => void;
   discardFromHand: (card: Card) => void;
   drawAndPlaceCard: (position: Position) => Card | null;
-  resetGame: (cpuDifficulty?: CPUDifficulty) => void;
+  resetGame: (cpuDifficulty?: CPUDifficulty, playerGoesFirst?: boolean) => void;
   cancelPlacement: (position: Position) => void;
 }
 
@@ -24,7 +24,7 @@ type GameAction =
   | { type: 'DISCARD_FROM_BOARD'; position: Position }
   | { type: 'DISCARD_FROM_HAND'; card: Card }
   | { type: 'DRAW_AND_PLACE'; position: Position }
-  | { type: 'RESET_GAME'; cpuDifficulty?: CPUDifficulty }
+  | { type: 'RESET_GAME'; cpuDifficulty?: CPUDifficulty; playerGoesFirst?: boolean }
   | { type: 'CANCEL_PLACEMENT'; position: Position };
 
 interface GameStateWrapper {
@@ -117,7 +117,12 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
     }
 
     case 'RESET_GAME': {
-      return { game: Game.createNewGame(action.cpuDifficulty), version: 0, currentPlayerIndexSnapshot: 0 };
+      const playerGoesFirst = action.playerGoesFirst !== undefined ? action.playerGoesFirst : true;
+      return {
+        game: Game.createNewGame(action.cpuDifficulty, playerGoesFirst),
+        version: 0,
+        currentPlayerIndexSnapshot: playerGoesFirst ? 0 : 1
+      };
     }
 
     case 'CANCEL_PLACEMENT': {
@@ -188,8 +193,8 @@ export function useGameState(): GameStateHook {
     }
   }, []);
 
-  const resetGame = useCallback((cpuDifficulty?: CPUDifficulty) => {
-    dispatch({ type: 'RESET_GAME', cpuDifficulty });
+  const resetGame = useCallback((cpuDifficulty?: CPUDifficulty, playerGoesFirst?: boolean) => {
+    dispatch({ type: 'RESET_GAME', cpuDifficulty, playerGoesFirst });
   }, []);
 
   const cancelPlacement = useCallback((position: Position) => {

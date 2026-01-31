@@ -267,26 +267,42 @@
 }
 
 .difficulty-modal-content h2 {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 32px 0;
+  margin: 0 0 24px 0;
+}
+
+.setting-section {
+  margin-bottom: 24px;
+}
+
+.setting-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 12px 0;
+  text-align: left;
 }
 
 .difficulty-buttons {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: 12px;
+}
+
+.turn-order-buttons {
+  display: flex;
+  gap: 12px;
 }
 
 .difficulty-button {
-  padding: 16px 24px;
+  padding: 12px 20px;
   background: #3b82f6;
   color: white;
   border: 3px solid transparent;
-  border-radius: 12px;
-  font-size: 18px;
+  border-radius: 10px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -318,24 +334,49 @@
 
 .difficulty-button .coming-soon {
   display: block;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
   margin-top: 4px;
+}
+
+.turn-order-button {
+  flex: 1;
+  padding: 12px 20px;
+  background: #3b82f6;
+  color: white;
+  border: 3px solid transparent;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.turn-order-button:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+}
+
+.turn-order-button.selected {
+  border-color: #f59e0b;
+  background: #2563eb;
 }
 
 .difficulty-modal-actions {
   display: flex;
   gap: 16px;
   justify-content: center;
+  margin-top: 24px;
 }
 
 .difficulty-cancel-button {
-  padding: 12px 32px;
+  padding: 10px 28px;
   background: #e2e8f0;
   color: #475569;
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -347,12 +388,12 @@
 }
 
 .difficulty-start-button {
-  padding: 12px 32px;
+  padding: 10px 28px;
   background: #10b981;
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;

@@ -42,6 +42,7 @@ export function GameContainer() {
 
   const [showDifficultyModal, setShowDifficultyModal] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<CPUDifficulty>('Easy');
+  const [playerGoesFirst, setPlayerGoesFirst] = useState(true);
 
   const comboDetector = useMemo(() => new ComboDetector(), []);
   const currentPlayer = game.getCurrentPlayer();
@@ -241,10 +242,11 @@ export function GameContainer() {
 
   const handleStartGameWithDifficulty = (difficulty: CPUDifficulty) => {
     setShowDifficultyModal(false);
-    resetGame(difficulty);
+    resetGame(difficulty, playerGoesFirst);
     clearMessages();
     addMessage(CommentaryBuilder.gameStart());
-    updateCurrent('下側のターンです');
+    const turnMessage = playerGoesFirst ? '下側のターンです' : '上側のターンです';
+    updateCurrent(turnMessage);
     selectCard(null);
     clearHighlight();
     clearBoardCardSelection();
@@ -254,6 +256,7 @@ export function GameContainer() {
   const handleCancelDifficultySelection = () => {
     setShowDifficultyModal(false);
     setSelectedDifficulty('Easy');
+    setPlayerGoesFirst(true);
   };
 
   const handleCancelCard = (position: Position) => {
@@ -427,25 +430,48 @@ export function GameContainer() {
       {showDifficultyModal && (
         <div className="difficulty-modal">
           <div className="difficulty-modal-content">
-            <h2>CPU難易度を選択</h2>
-            <div className="difficulty-buttons">
-              {(['Easy', 'Normal', 'Hard'] as CPUDifficulty[]).map((difficulty) => {
-                const isEnabled = CPU_DIFFICULTY_ENABLED[difficulty];
-                const isSelected = selectedDifficulty === difficulty;
+            <h2>ゲーム設定</h2>
 
-                return (
-                  <button
-                    key={difficulty}
-                    className={`difficulty-button ${isSelected ? 'selected' : ''} ${!isEnabled ? 'disabled' : ''}`}
-                    onClick={() => isEnabled && setSelectedDifficulty(difficulty)}
-                    disabled={!isEnabled}
-                  >
-                    {CPU_DIFFICULTY_LABELS[difficulty]}
-                    {!isEnabled && <span className="coming-soon">（準備中）</span>}
-                  </button>
-                );
-              })}
+            <div className="setting-section">
+              <h3>CPU難易度</h3>
+              <div className="difficulty-buttons">
+                {(['Easy', 'Normal', 'Hard'] as CPUDifficulty[]).map((difficulty) => {
+                  const isEnabled = CPU_DIFFICULTY_ENABLED[difficulty];
+                  const isSelected = selectedDifficulty === difficulty;
+
+                  return (
+                    <button
+                      key={difficulty}
+                      className={`difficulty-button ${isSelected ? 'selected' : ''} ${!isEnabled ? 'disabled' : ''}`}
+                      onClick={() => isEnabled && setSelectedDifficulty(difficulty)}
+                      disabled={!isEnabled}
+                    >
+                      {CPU_DIFFICULTY_LABELS[difficulty]}
+                      {!isEnabled && <span className="coming-soon">（準備中）</span>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            <div className="setting-section">
+              <h3>先攻・後攻</h3>
+              <div className="turn-order-buttons">
+                <button
+                  className={`turn-order-button ${playerGoesFirst ? 'selected' : ''}`}
+                  onClick={() => setPlayerGoesFirst(true)}
+                >
+                  先攻（自分が先）
+                </button>
+                <button
+                  className={`turn-order-button ${!playerGoesFirst ? 'selected' : ''}`}
+                  onClick={() => setPlayerGoesFirst(false)}
+                >
+                  後攻（CPUが先）
+                </button>
+              </div>
+            </div>
+
             <div className="difficulty-modal-actions">
               <button
                 className="difficulty-cancel-button"

@@ -25,7 +25,7 @@ export class Game {
     public readonly cpuDifficulty?: CPUDifficulty
   ) {}
 
-  static createNewGame(cpuDifficulty?: CPUDifficulty): Game {
+  static createNewGame(cpuDifficulty?: CPUDifficulty, playerGoesFirst: boolean = true): Game {
     const deck = Deck.createInitialDeck();
     deck.shuffle();
 
@@ -43,7 +43,7 @@ export class Game {
       new Board(),
       deck,
       [player1, player2],
-      0,
+      playerGoesFirst ? 0 : 1,
       34,
       [],
       GameState.PLAYING,
