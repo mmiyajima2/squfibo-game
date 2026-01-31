@@ -103,8 +103,6 @@ export function GameContainer() {
 
   // CPUターンの自動実行
   useEffect(() => {
-    const currentPlayer = game.getCurrentPlayer();
-
     // ゲームオーバー時やCPUでない場合はスキップ
     if (game.isGameOver() || !currentPlayer.isCPU()) {
       return;
@@ -131,7 +129,7 @@ export function GameContainer() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [game, executeCPUTurn, addMessage, showError]);
+  }, [game, executeCPUTurn, addMessage, showError, currentPlayer.id]);
 
 
   const handleCardSelect = (card: Card) => {
