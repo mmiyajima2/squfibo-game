@@ -52,9 +52,11 @@ export class CPUEasyStrategy implements CPUStrategy {
     // ステップ4: 役の申告判定
     const { claimedCombo, missedCombo } = this.decideCombo(detectedCombos);
 
-    // ステップ5: 役を申告する場合、ゲームに適用（claimCombo内でendTurn()が呼ばれる）
+    // ステップ5: 役を申告する場合、ゲームに適用
     if (claimedCombo) {
       game.claimCombo(claimedCombo);
+      // 役申告後は明示的にターン終了（ドメインレイヤーでは自動終了しない）
+      game.endTurn();
     } else {
       // 役を申告しない場合は、明示的にターン終了
       game.endTurn();

@@ -20,7 +20,7 @@ import './GameContainer.css';
 import '../ComboRules/ComboRulesPanel.css';
 
 export function GameContainer() {
-  const { game, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn } = useGameState();
+  const { game, version, currentPlayerIndex, placeCardFromHand, claimCombo, endTurn, discardFromBoard, drawAndPlaceCard, resetGame, cancelPlacement, executeCPUTurn } = useGameState();
   const {
     selectedCard,
     selectCard,
@@ -103,8 +103,21 @@ export function GameContainer() {
 
   // CPUターンの自動実行
   useEffect(() => {
+    // currentPlayerIndexからプレイヤーを取得
+    const currentPlayerInEffect = game.getCurrentPlayer();
+    const isCPU = currentPlayerIndex === 1; // player2 = CPU
+
+    console.log('[CPU Auto-Execute] useEffect fired', {
+      version,
+      currentPlayerIndex,
+      currentPlayerId: currentPlayerInEffect.id,
+      isCPU,
+      isGameOver: game.isGameOver()
+    });
+
     // ゲームオーバー時やCPUでない場合はスキップ
-    if (game.isGameOver() || !currentPlayer.isCPU()) {
+    if (game.isGameOver() || !isCPU) {
+      console.log('[CPU Auto-Execute] Skipped (game over or not CPU)');
       return;
     }
 
@@ -114,7 +127,7 @@ export function GameContainer() {
         executeCPUTurn();
 
         // CPUの行動を実況に追加
-        const cpuPlayerName = currentPlayer.id === 'player1' ? '下側' : '上側';
+        const cpuPlayerName = currentPlayerInEffect.id === 'player1' ? '下側' : '上側';
         addMessage(
           CommentaryBuilder.createMessage(
             'cpu',
@@ -129,7 +142,7 @@ export function GameContainer() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [game, executeCPUTurn, addMessage, showError, currentPlayer.id]);
+  }, [currentPlayerIndex, version, game, executeCPUTurn, addMessage, showError]);
 
 
   const handleCardSelect = (card: Card) => {

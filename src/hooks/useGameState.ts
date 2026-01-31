@@ -7,6 +7,8 @@ import type { CPUDifficulty } from '../types/CPUDifficulty';
 
 interface GameStateHook {
   game: Game;
+  version: number;
+  currentPlayerIndex: 0 | 1;
   placeCardFromHand: (card: Card, position: Position) => void;
   claimCombo: (combo: Combo) => boolean;
   endTurn: () => void;
@@ -77,14 +79,25 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
       // React Strict Modeの二重実行対策
       const beforeIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
 
+      console.log('[END_TURN] Action received', {
+        beforeIndex,
+        snapshot: state.currentPlayerIndexSnapshot,
+        version: state.version
+      });
+
       // gameの状態とsnapshotが一致しない場合、1回目の実行で既にターンが切り替わっている
       // 2回目の実行では、snapshotをgameの現在の状態に同期させる
       if (beforeIndex !== state.currentPlayerIndexSnapshot) {
+        console.log('[END_TURN] Skipped (snapshot mismatch)');
         return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: beforeIndex as 0 | 1 };
       }
 
       game.endTurn();
       const afterIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+      console.log('[END_TURN] Turn ended', {
+        afterIndex,
+        newVersion: state.version + 1
+      });
       return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
     }
 
@@ -143,24 +156,38 @@ function gameReducer(state: GameStateWrapper, action: GameAction): GameStateWrap
 
     case 'EXECUTE_CPU_TURN': {
       const currentPlayer = game.getCurrentPlayer();
+      const currentIndex = currentPlayer.id === 'player1' ? 0 : 1;
 
-      // React Strict Modeの二重実行対策: CPUでない場合や、既にターンが切り替わっている場合はスキップ
+      console.log('[EXECUTE_CPU_TURN] Action received', {
+        currentPlayerId: currentPlayer.id,
+        isCPU: currentPlayer.isCPU(),
+        currentIndex,
+        snapshot: state.currentPlayerIndexSnapshot,
+        version: state.version
+      });
+
+      // React Strict Modeの二重実行対策: CPUでない場合はスキップ
       if (!currentPlayer.isCPU()) {
+        console.log('[EXECUTE_CPU_TURN] Skipped (not CPU)');
         return state;
       }
 
-      const beforeIndex = currentPlayer.id === 'player1' ? 0 : 1;
-
-      // スナップショットと一致しない場合は既に実行済み
-      if (beforeIndex !== state.currentPlayerIndexSnapshot) {
-        return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: beforeIndex as 0 | 1 };
+      // スナップショットと一致しない場合は既に実行済み（snapshotを同期して返す）
+      if (currentIndex !== state.currentPlayerIndexSnapshot) {
+        console.log('[EXECUTE_CPU_TURN] Skipped (snapshot mismatch) - syncing snapshot', { currentIndex, snapshot: state.currentPlayerIndexSnapshot });
+        return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: currentIndex as 0 | 1 };
       }
 
       // CPUターンを実行
+      console.log('[EXECUTE_CPU_TURN] Executing CPU turn...');
       game.executeCPUTurn();
 
       // executeCPUTurn内部でendTurn()が呼ばれるため、ターンが切り替わっている
       const afterIndex = game.getCurrentPlayer().id === 'player1' ? 0 : 1;
+      console.log('[EXECUTE_CPU_TURN] CPU turn completed', {
+        afterIndex,
+        newVersion: state.version + 1
+      });
       return { ...state, version: state.version + 1, currentPlayerIndexSnapshot: afterIndex as 0 | 1 };
     }
 
@@ -232,6 +259,8 @@ export function useGameState(): GameStateHook {
 
   return {
     game: state.game,
+    version: state.version,
+    currentPlayerIndex: state.currentPlayerIndexSnapshot,
     placeCardFromHand,
     claimCombo,
     endTurn,
