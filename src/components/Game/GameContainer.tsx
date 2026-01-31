@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useUIState } from '../../hooks/useUIState';
 import { useCommentary } from '../../hooks/useCommentary';
