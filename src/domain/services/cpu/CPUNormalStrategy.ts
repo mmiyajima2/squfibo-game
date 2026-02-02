@@ -87,7 +87,7 @@ export class CPUNormalStrategy implements CPUStrategy {
     }
 
     // ステップ2: カードを配置
-    const { card, position } = this.decidePlacement(game);
+    const { card, position } = this.decidePlacement(game, removedPosition);
     let placedCard: Card;
 
     if (card !== null) {

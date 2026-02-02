@@ -1,5 +1,15 @@
 # タスク
 
+## [x] バグ:CPU(Normal)で、ボード満満でエラーがでる
+- ✅ 修正完了（2026-02-02）
+- **問題の原因**:
+  - `executeTurn`メソッドで盤面満杯時に`removedPosition`を設定していたが、`decidePlacement`メソッド呼び出し時に渡していなかった
+  - そのため、除去した位置が空きとして認識されず、「No empty positions available」エラーが発生
+  - EasyとNormal両方で同じバグが存在していた
+- **修正内容**:
+  - CPUEasyStrategy.ts:89行目 - `decidePlacement(game)`を`decidePlacement(game, removedPosition)`に変更
+  - CPUNormalStrategy.ts:90行目 - `decidePlacement(game)`を`decidePlacement(game, removedPosition)`に変更
+
 ## [x] 要望:上側つまりCPU側は手札を非表示にしてほしい
 - ✅ 実装完了（2026-02-02）
 - **実装内容**:
