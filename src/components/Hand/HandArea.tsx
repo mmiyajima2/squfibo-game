@@ -11,6 +11,7 @@ interface HandAreaProps {
   label?: string;
   isOpponent?: boolean;
   disabled?: boolean;
+  hideCardDetails?: boolean;
 }
 
 export function HandArea({
@@ -22,6 +23,7 @@ export function HandArea({
   label,
   isOpponent = false,
   disabled = false,
+  hideCardDetails = false,
 }: HandAreaProps) {
   const handleCardClick = (card: Card) => {
     if (onCardClick && !isOpponent && !disabled) {
@@ -41,6 +43,10 @@ export function HandArea({
       <div className="hand-cards">
         {cards.length === 0 ? (
           <div className="hand-empty">手札なし</div>
+        ) : hideCardDetails ? (
+          cards.map((card, index) => (
+            <div key={`hidden-${index}`} className="hand-card-hidden" />
+          ))
         ) : (
           cards.map((card) => (
             <div key={card.id} className="hand-card-wrapper">

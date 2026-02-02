@@ -1,5 +1,17 @@
 # タスク
 
+## [x] 要望:上側つまりCPU側は手札を非表示にしてほしい
+- ✅ 実装完了（2026-02-02）
+- **実装内容**:
+  - `HandArea`コンポーネントに`hideCardDetails`プロパティを追加
+  - CPU側（上側）の手札は伏せカード（？マーク付きグレー背景）で表示
+  - 手札の枚数は従来通り表示される
+  - プレイヤー側（下側）の手札は今まで通り詳細が表示される
+- **変更ファイル**:
+  - src/components/Hand/HandArea.tsx（hideCardDetailsプロパティ追加、伏せカード表示ロジック）
+  - src/components/Hand/HandArea.css（伏せカードのスタイル）
+  - src/components/Game/GameContainer.tsx（CPU側にhideCardDetails={true}を設定）
+
 ## [x] バグ:CPU（Normal）で、CPU側の3枚役成立がおかしい
 - ✅ 修正完了（2026-02-02）
 - **問題の原因**:

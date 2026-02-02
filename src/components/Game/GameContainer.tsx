@@ -666,6 +666,7 @@ export function GameContainer() {
             label="上側の手札"
             isOpponent={isPlayer1Turn}
             disabled={!hasGameStarted}
+            hideCardDetails={true}
           />
         </div>
 
