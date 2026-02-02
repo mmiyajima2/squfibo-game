@@ -1,5 +1,17 @@
 # タスク
 
+## [x] CPU(Normal)の実装をしてほしい
+- ✅ サービスレイヤのコンポーネント実装完了
+- ✅ プレゼンテーション層とのつなぎこみは不要
+- ✅ CPU戦略はファクトリーメソッドパターンをつかって抽象化してあるはずで、そのメリットをいかすように実装してほしい
+- ✅ 実装完了（2026-02-02）
+  - CPUNormalStrategy.ts を作成
+  - CPUStrategyFactory を更新してNormal難易度に対応
+  - CPU_DIFFICULTY_ENABLEDでNormalを有効化
+  - 戦略的配置（suggestWinningPlacementsを使用）
+  - 5%の見落とし率を実装
+  - カード優先順位（16 > 9 > 1 > 4）を実装
+
 ## [x] CPU(Normal)の行動仕様を修正してほしい
 - ✅ 内部実装観点の箇所について
 - ✅ ./docs/cpu_normal_spec.md　が該当ファイルになる

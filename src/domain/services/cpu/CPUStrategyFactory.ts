@@ -1,6 +1,7 @@
 import type { CPUDifficulty } from '../../../types/CPUDifficulty';
 import type { CPUStrategy } from './CPUStrategy';
 import { CPUEasyStrategy } from './CPUEasyStrategy';
+import { CPUNormalStrategy } from './CPUNormalStrategy';
 
 /**
  * CPU戦略ファクトリー
@@ -19,8 +20,7 @@ export class CPUStrategyFactory {
       case 'Easy':
         return new CPUEasyStrategy();
       case 'Normal':
-        // 将来実装予定
-        throw new Error('Normal difficulty is not implemented yet');
+        return new CPUNormalStrategy();
       case 'Hard':
         // 将来実装予定
         throw new Error('Hard difficulty is not implemented yet');
