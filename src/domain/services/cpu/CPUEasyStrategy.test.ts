@@ -93,18 +93,19 @@ describe('CPUEasyStrategy', () => {
       let detectedCount = 0;
 
       for (let i = 0; i < iterations; i++) {
-        const game = Game.createNewGame('Easy', false);
-        const currentPlayer = game.getCurrentPlayer();
-
-        // 1+4の役を作る
-        const pos1 = Position.of(0, 0);
-
-        game.placeCard(new Card(CardValue.of(1), CardColor.RED), pos1);
-
-        // 手札に4を追加
-        currentPlayer.hand.addCard(new Card(CardValue.of(4), CardColor.RED));
-
+        const game = Game.createNewGame('Easy', true);
         const strategy = new CPUEasyStrategy();
+
+        // 人間が赤1を配置
+        game.placeCard(new Card(CardValue.of(1), CardColor.RED), Position.of(0, 0));
+        game.endTurn();
+
+        // CPUの手札をクリアして赤4のみにする
+        const cpuPlayer = game.getCurrentPlayer();
+        const currentCards = cpuPlayer.hand.getCards();
+        currentCards.forEach(card => cpuPlayer.playCard(card));
+        cpuPlayer.hand.addCard(new Card(CardValue.of(4), CardColor.RED));
+
         const result = strategy.executeTurn(game);
 
         if (result.claimedCombo) {
@@ -121,7 +122,7 @@ describe('CPUEasyStrategy', () => {
       // 見落とし率が10%～35%の範囲内であることを確認（統計的な誤差を考慮）
       expect(missRate).toBeGreaterThan(0.1);
       expect(missRate).toBeLessThan(0.35);
-      expect(totalCombos).toBeGreaterThan(0); // 役が検出されたことを確認
+      expect(totalCombos).toBeGreaterThan(iterations * 0.1); // 少なくとも10%以上で役が成立するはず
     });
   });
 

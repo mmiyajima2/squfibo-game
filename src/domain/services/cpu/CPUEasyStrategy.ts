@@ -37,9 +37,11 @@ export class CPUEasyStrategy implements CPUStrategy {
     // ステップ2: カード配置を決定
     const { card, position } = this.decidePlacement(game, removedPosition);
 
+    let placedCard: Card;
     if (card !== null) {
       // 手札からカードを出して配置
       steps.push({ type: 'PLACE_CARD', card, position, isFromDeck: false });
+      placedCard = card;
     } else {
       // 手札がない場合は山札から引いて配置
       const deckCard = game.deck.peek();
@@ -47,11 +49,14 @@ export class CPUEasyStrategy implements CPUStrategy {
         throw new Error('Deck is empty');
       }
       steps.push({ type: 'PLACE_CARD', card: deckCard, position, isFromDeck: true });
+      placedCard = deckCard;
     }
 
     // ステップ3: 役の検出（将来の盤面状態をシミュレート）
-    // 注: 実際の状態変更なしで検出するため、配置カードの位置を使う
+    // 一時的にカードを配置して役を検出し、その後削除
+    game.board.placeCard(placedCard, position);
     const detectedCombos = this.comboDetector.detectCombos(game.board, position);
+    game.board.removeCard(position);
 
     // ステップ4: 役の申告判定
     const { claimedCombo, missedCombo: missed } = this.decideCombo(detectedCombos);
