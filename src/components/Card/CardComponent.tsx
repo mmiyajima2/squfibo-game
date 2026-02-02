@@ -13,7 +13,6 @@ interface CardComponentProps {
   onDelete?: (card: Card) => void;
   showCancelIcon?: boolean;
   onCancel?: (card: Card) => void;
-  isJustPlaced?: boolean;
 }
 
 export function CardComponent({
@@ -27,7 +26,6 @@ export function CardComponent({
   onDelete,
   showCancelIcon = false,
   onCancel,
-  isJustPlaced = false,
 }: CardComponentProps) {
   const colorName = card.color === CardColor.RED ? 'red' : 'blue';
   const imagePath = `/cards/${colorName}-${card.value.value}.svg`;
@@ -41,7 +39,6 @@ export function CardComponent({
     onClick ? 'card-clickable' : '',
     showDeleteIcon ? 'card-with-delete' : '',
     showCancelIcon ? 'card-with-cancel' : '',
-    isJustPlaced ? 'card-just-placed card-placement-animation' : '',
   ]
     .filter(Boolean)
     .join(' ');

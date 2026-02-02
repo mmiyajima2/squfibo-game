@@ -15,7 +15,6 @@ interface CellProps {
   onDeleteCard?: (position: Position) => void;
   showCancelIcon?: boolean;
   onCancelCard?: (position: Position) => void;
-  isJustPlaced?: boolean;
 }
 
 export function Cell({
@@ -30,7 +29,6 @@ export function Cell({
   onDeleteCard,
   showCancelIcon = false,
   onCancelCard,
-  isJustPlaced = false,
 }: CellProps) {
   const handleClick = () => {
     if (card && onCardClick) {
@@ -73,7 +71,6 @@ export function Cell({
           onDelete={handleDeleteCard}
           showCancelIcon={showCancelIcon}
           onCancel={handleCancelCard}
-          isJustPlaced={isJustPlaced}
         />
       ) : (
         <div className="cell-empty">

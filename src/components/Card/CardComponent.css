@@ -159,30 +159,6 @@
   margin: 8px;
 }
 
-/* 今置いたカードのスタイル */
-.card-just-placed {
-  outline: 4px solid #fbbf24;
-  outline-offset: 2px;
-  box-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
-}
-
-/* 配置直後のポップアニメーション（1回のみ） */
-@keyframes placementPop {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.15);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.card-placement-animation {
-  animation: placementPop 0.3s ease-out;
-}
-
 /* 選択されたカードのチェックマーク */
 .card-selected-indicator {
   position: absolute;

@@ -81,7 +81,6 @@ export function BoardGrid({
                 onDeleteCard={onDeleteCard}
                 showCancelIcon={showCancelIcons && isJustPlaced(position, card)}
                 onCancelCard={onCancelCard}
-                isJustPlaced={isJustPlaced(position, card)}
               />
             );
           })}
