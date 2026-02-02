@@ -1,5 +1,17 @@
 # タスク
 
+## [x] バグ:CPU（Normal）で、CPU側の3枚役成立がおかしい
+- ✅ 修正完了（2026-02-02）
+- **問題の原因**:
+  - `ComboDetector.findThreeCardCombos`で、カードの値（1-4-16）のみをチェックし、位置の連なり（L字型または直線）をチェックしていなかった
+  - そのため、斜め配置など連なっていない配置でも3枚役が成立してしまっていた
+- **修正内容**:
+  - `findThreeCardCombos`メソッドに`areAdjacentThreeCards`による位置チェックを追加
+  - テストケースを修正（斜め配置→L字型配置に変更）
+  - 関連ファイル:
+    - src/domain/services/ComboDetector.ts:129行目
+    - src/domain/services/ComboDetector.test.ts:60-76行目
+
 ## [x] バグ:CPU（Normal）で、戦略と申告がおかしい
 - ✅ 修正完了（2026-02-02）
 - **問題の原因**:

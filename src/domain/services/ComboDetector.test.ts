@@ -62,11 +62,12 @@ describe('ComboDetector', () => {
       const card4 = new Card(CardValue.of(4), CardColor.RED);
       const card16 = new Card(CardValue.of(16), CardColor.RED);
 
+      // L字型に配置（連なった形）
       board.placeCard(card1, Position.of(0, 0));
-      board.placeCard(card4, Position.of(1, 1));
-      board.placeCard(card16, Position.of(2, 2));
+      board.placeCard(card4, Position.of(0, 1));
+      board.placeCard(card16, Position.of(1, 0));
 
-      const combos = detector.detectCombos(board, Position.of(2, 2));
+      const combos = detector.detectCombos(board, Position.of(1, 0));
 
       expect(combos.length).toBeGreaterThan(0);
       const threeCardCombo = combos.find(c => c.type === ComboType.THREE_CARDS);

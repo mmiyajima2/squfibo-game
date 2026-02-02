@@ -126,13 +126,16 @@ export class ComboDetector {
         const values = [lastValue, card1.value.value, card2.value.value].sort((a, b) => a - b);
 
         if (values[0] === 1 && values[1] === 4 && values[2] === 16) {
-          combos.push(
-            new Combo(
-              ComboType.THREE_CARDS,
-              [lastCard, card1, card2],
-              [lastPlacedPosition, pos1, pos2]
-            )
-          );
+          // 3枚役は連なっている必要がある（縦3つ、横3つ、またはL字型）
+          if (this.areAdjacentThreeCards([lastPlacedPosition, pos1, pos2])) {
+            combos.push(
+              new Combo(
+                ComboType.THREE_CARDS,
+                [lastCard, card1, card2],
+                [lastPlacedPosition, pos1, pos2]
+              )
+            );
+          }
         }
       }
     }
