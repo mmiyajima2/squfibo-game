@@ -7,7 +7,7 @@ export interface PlacementSuggestion {
   card: Card;           // 手札のどのカードを
   position: Position;   // どの位置に置くか
   expectedCombo: Combo; // 成立する役
-  priority: number;     // 優先度（4=調調, 3=3枚役, 2=4-9, 1=1-4）
+  priority: number;     // 優先度（3=3枚役, 2=4-9, 1=1-4, 0=盤面クリア）
 }
 
 export class ComboDetector {
@@ -332,14 +332,14 @@ export class ComboDetector {
 
   private getComboTypePriority(type: ComboType): number {
     switch (type) {
-      case ComboType.CLEARING_YAKU:
-        return 4; // 最優先（盤面をクリアできる）
       case ComboType.THREE_CARDS:
         return 3; // 3つ星獲得
       case ComboType.TWO_CARDS_4_9:
         return 2; // 2つ星獲得（1-4より強い組み合わせ）
       case ComboType.TWO_CARDS_1_4:
         return 1; // 2つ星獲得
+      case ComboType.CLEARING_YAKU:
+        return 0; // 最下位（星の獲得ができない）
       default:
         return 0;
     }
