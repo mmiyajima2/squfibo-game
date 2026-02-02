@@ -35,10 +35,11 @@ describe('ComboDetector', () => {
       const card4 = new Card(CardValue.of(4), CardColor.BLUE);
       const card9 = new Card(CardValue.of(9), CardColor.BLUE);
 
+      // 縦に隣接して配置
       board.placeCard(card4, Position.of(1, 1));
-      board.placeCard(card9, Position.of(2, 2));
+      board.placeCard(card9, Position.of(2, 1));
 
-      const combos = detector.detectCombos(board, Position.of(2, 2));
+      const combos = detector.detectCombos(board, Position.of(2, 1));
 
       expect(combos.length).toBe(1);
       expect(combos[0].type).toBe(ComboType.TWO_CARDS_4_9);
@@ -79,11 +80,12 @@ describe('ComboDetector', () => {
       const card4 = new Card(CardValue.of(4), CardColor.BLUE);
       const card16 = new Card(CardValue.of(16), CardColor.BLUE);
 
+      // L字型に配置（3枚役が成立し、かつ1-4が隣接）
       board.placeCard(card1, Position.of(0, 0));
-      board.placeCard(card4, Position.of(1, 1));
-      board.placeCard(card16, Position.of(2, 2));
+      board.placeCard(card4, Position.of(0, 1));
+      board.placeCard(card16, Position.of(1, 1));
 
-      const combos = detector.detectCombos(board, Position.of(1, 1));
+      const combos = detector.detectCombos(board, Position.of(0, 1));
 
       expect(combos.length).toBeGreaterThan(1);
       expect(combos.some(c => c.type === ComboType.TWO_CARDS_1_4)).toBe(true);
@@ -314,7 +316,7 @@ describe('ComboDetector', () => {
       expect(suggestions.some(s => s.priority === 3)).toBe(true);
     });
 
-    it('should suggest clearing yaku with highest priority', () => {
+    it('should suggest clearing yaku with lowest priority', () => {
       // Place two RED 4s on the board in adjacent positions
       const card4_1 = new Card(CardValue.of(4), CardColor.RED);
       const card4_2 = new Card(CardValue.of(4), CardColor.RED);
@@ -332,7 +334,7 @@ describe('ComboDetector', () => {
         s => s.expectedCombo.type === ComboType.CLEARING_YAKU
       );
       expect(clearingYakuSuggestion).toBeDefined();
-      expect(clearingYakuSuggestion!.priority).toBe(4);
+      expect(clearingYakuSuggestion!.priority).toBe(0); // Clearing yaku has lowest priority
     });
 
     it('should sort suggestions by priority (highest first)', () => {

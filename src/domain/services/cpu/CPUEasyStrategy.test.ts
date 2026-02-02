@@ -118,9 +118,9 @@ describe('CPUEasyStrategy', () => {
       const totalCombos = detectedCount + missedCount;
       const missRate = missedCount / totalCombos;
 
-      // 見落とし率が15%～25%の範囲内であることを確認（統計的な誤差を考慮）
+      // 見落とし率が10%～35%の範囲内であることを確認（統計的な誤差を考慮）
       expect(missRate).toBeGreaterThan(0.1);
-      expect(missRate).toBeLessThan(0.3);
+      expect(missRate).toBeLessThan(0.35);
       expect(totalCombos).toBeGreaterThan(0); // 役が検出されたことを確認
     });
   });

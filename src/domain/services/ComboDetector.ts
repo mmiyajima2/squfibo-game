@@ -72,6 +72,11 @@ export class ComboDetector {
         continue;
       }
 
+      // 2枚役は縦または横に隣接している必要がある
+      if (!this.areAdjacentTwoCards([lastPlacedPosition, pos])) {
+        continue;
+      }
+
       const value = card.value.value;
 
       if (
