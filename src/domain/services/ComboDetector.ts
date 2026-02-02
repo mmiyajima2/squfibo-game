@@ -3,6 +3,13 @@ import { Card } from '../entities/Card';
 import { Position } from '../valueObjects/Position';
 import { Combo, ComboType } from './Combo';
 
+export interface PlacementSuggestion {
+  card: Card;           // 手札のどのカードを
+  position: Position;   // どの位置に置くか
+  expectedCombo: Combo; // 成立する役
+  priority: number;     // 優先度（4=調調, 3=3枚役, 2=4-9, 1=1-4）
+}
+
 export class ComboDetector {
   detectCombos(board: Board, lastPlacedPosition: Position): Combo[] {
     const combos: Combo[] = [];
@@ -220,6 +227,45 @@ export class ComboDetector {
     return null;
   }
 
+  suggestWinningPlacements(board: Board, hand: Card[]): PlacementSuggestion[] {
+    const suggestions: PlacementSuggestion[] = [];
+    const emptyPositions = this.getEmptyPositions(board);
+
+    // 手札の各カードで、空いている全ての位置を試す
+    for (const card of hand) {
+      for (const position of emptyPositions) {
+        // 仮想的に配置
+        board.placeCard(card, position);
+
+        // 役が成立するか確認
+        const detectedCombos = this.detectCombos(board, position);
+
+        // 元に戻す
+        board.removeCard(position);
+
+        // 成立した役を候補として追加
+        for (const combo of detectedCombos) {
+          suggestions.push({
+            card,
+            position,
+            expectedCombo: combo,
+            priority: this.getComboTypePriority(combo.type)
+          });
+        }
+      }
+    }
+
+    // 優先度順にソート（高い順）
+    suggestions.sort((a, b) => {
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority;
+      }
+      return b.expectedCombo.getCardCount() - a.expectedCombo.getCardCount();
+    });
+
+    return suggestions;
+  }
+
   /**
    * 2つの位置が縦または横に隣接しているかをチェック
    */
@@ -269,5 +315,33 @@ export class ComboDetector {
     // 縦または横に3枚連なる: [1, 1, 2]（両端が1、中央が2）
     // L字型: [1, 1, 2]（両端が1、コーナーが2）
     return counts[0] === 1 && counts[1] === 1 && counts[2] === 2;
+  }
+
+  private getEmptyPositions(board: Board): Position[] {
+    const emptyPositions: Position[] = [];
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const position = Position.of(row, col);
+        if (board.isEmpty(position)) {
+          emptyPositions.push(position);
+        }
+      }
+    }
+    return emptyPositions;
+  }
+
+  private getComboTypePriority(type: ComboType): number {
+    switch (type) {
+      case ComboType.CLEARING_YAKU:
+        return 4; // 最優先（盤面をクリアできる）
+      case ComboType.THREE_CARDS:
+        return 3; // 3つ星獲得
+      case ComboType.TWO_CARDS_4_9:
+        return 2; // 2つ星獲得（1-4より強い組み合わせ）
+      case ComboType.TWO_CARDS_1_4:
+        return 1; // 2つ星獲得
+      default:
+        return 0;
+    }
   }
 }

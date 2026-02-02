@@ -242,4 +242,173 @@ describe('ComboDetector', () => {
       expect(result).toBe(ComboType.THREE_CARDS);
     });
   });
+
+  describe('suggestWinningPlacements', () => {
+    it('should return empty array when board is full', () => {
+      // Fill the entire board
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          board.placeCard(new Card(CardValue.of(1), CardColor.RED), Position.of(row, col));
+        }
+      }
+
+      const hand = [new Card(CardValue.of(4), CardColor.RED)];
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      expect(suggestions.length).toBe(0);
+    });
+
+    it('should return empty array when hand is empty', () => {
+      const suggestions = detector.suggestWinningPlacements(board, []);
+
+      expect(suggestions.length).toBe(0);
+    });
+
+    it('should suggest placement for 1+4 combo', () => {
+      // Place a RED 1 on the board
+      const card1 = new Card(CardValue.of(1), CardColor.RED);
+      board.placeCard(card1, Position.of(0, 0));
+
+      // Hand has a RED 4
+      const hand = [new Card(CardValue.of(4), CardColor.RED)];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      // Should find at least one suggestion (placing RED 4 adjacent to RED 1)
+      expect(suggestions.length).toBeGreaterThan(0);
+      expect(suggestions.some(s => s.expectedCombo.type === ComboType.TWO_CARDS_1_4)).toBe(true);
+      expect(suggestions.some(s => s.priority === 1)).toBe(true);
+    });
+
+    it('should suggest placement for 4+9 combo', () => {
+      // Place a BLUE 4 on the board
+      const card4 = new Card(CardValue.of(4), CardColor.BLUE);
+      board.placeCard(card4, Position.of(1, 1));
+
+      // Hand has a BLUE 9
+      const hand = [new Card(CardValue.of(9), CardColor.BLUE)];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      // Should find suggestions for 4+9 combo
+      expect(suggestions.length).toBeGreaterThan(0);
+      expect(suggestions.some(s => s.expectedCombo.type === ComboType.TWO_CARDS_4_9)).toBe(true);
+      expect(suggestions.some(s => s.priority === 2)).toBe(true);
+    });
+
+    it('should suggest placement for 1+4+16 three-card combo', () => {
+      // Place RED 1 and RED 4 on the board
+      const card1 = new Card(CardValue.of(1), CardColor.RED);
+      const card4 = new Card(CardValue.of(4), CardColor.RED);
+      board.placeCard(card1, Position.of(0, 0));
+      board.placeCard(card4, Position.of(0, 1));
+
+      // Hand has a RED 16
+      const hand = [new Card(CardValue.of(16), CardColor.RED)];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      // Should find suggestions for three-card combo
+      expect(suggestions.length).toBeGreaterThan(0);
+      expect(suggestions.some(s => s.expectedCombo.type === ComboType.THREE_CARDS)).toBe(true);
+      expect(suggestions.some(s => s.priority === 3)).toBe(true);
+    });
+
+    it('should suggest clearing yaku with highest priority', () => {
+      // Place two RED 4s on the board in adjacent positions
+      const card4_1 = new Card(CardValue.of(4), CardColor.RED);
+      const card4_2 = new Card(CardValue.of(4), CardColor.RED);
+      board.placeCard(card4_1, Position.of(0, 0));
+      board.placeCard(card4_2, Position.of(0, 1));
+
+      // Hand has another RED 4
+      const hand = [new Card(CardValue.of(4), CardColor.RED)];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      // Should find clearing yaku suggestion
+      expect(suggestions.length).toBeGreaterThan(0);
+      const clearingYakuSuggestion = suggestions.find(
+        s => s.expectedCombo.type === ComboType.CLEARING_YAKU
+      );
+      expect(clearingYakuSuggestion).toBeDefined();
+      expect(clearingYakuSuggestion!.priority).toBe(4);
+    });
+
+    it('should sort suggestions by priority (highest first)', () => {
+      // Create a scenario with multiple possible combos
+      const card1 = new Card(CardValue.of(1), CardColor.RED);
+      const card4 = new Card(CardValue.of(4), CardColor.RED);
+      board.placeCard(card1, Position.of(0, 0));
+      board.placeCard(card4, Position.of(0, 1));
+
+      // Hand contains cards that can form different combos
+      const hand = [
+        new Card(CardValue.of(16), CardColor.RED), // Can form 3-card combo
+        new Card(CardValue.of(9), CardColor.RED),  // Can form 4+9 combo
+      ];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      expect(suggestions.length).toBeGreaterThan(0);
+
+      // Check that suggestions are sorted by priority
+      for (let i = 0; i < suggestions.length - 1; i++) {
+        expect(suggestions[i].priority).toBeGreaterThanOrEqual(suggestions[i + 1].priority);
+      }
+    });
+
+    it('should not suggest placements when no combos are possible', () => {
+      // Place a RED 1 on the board
+      const card1 = new Card(CardValue.of(1), CardColor.RED);
+      board.placeCard(card1, Position.of(0, 0));
+
+      // Hand has cards that cannot form combos with RED 1
+      const hand = [new Card(CardValue.of(9), CardColor.RED)];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      // Should return empty array since 1+9 is not a valid combo
+      expect(suggestions.length).toBe(0);
+    });
+
+    it('should handle multiple cards in hand', () => {
+      // Place a BLUE 4 on the board
+      const card4 = new Card(CardValue.of(4), CardColor.BLUE);
+      board.placeCard(card4, Position.of(1, 1));
+
+      // Hand has multiple cards
+      const hand = [
+        new Card(CardValue.of(1), CardColor.BLUE), // Can form 1+4 combo
+        new Card(CardValue.of(9), CardColor.BLUE), // Can form 4+9 combo
+        new Card(CardValue.of(1), CardColor.RED),  // Cannot form combo (different color)
+      ];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      // Should find suggestions for both BLUE 1 and BLUE 9
+      expect(suggestions.length).toBeGreaterThan(0);
+      expect(suggestions.some(s => s.card.value.value === 1 && s.card.color === CardColor.BLUE)).toBe(true);
+      expect(suggestions.some(s => s.card.value.value === 9 && s.card.color === CardColor.BLUE)).toBe(true);
+    });
+
+    it('should include multiple suggestions for the same card at different positions', () => {
+      // Place RED 1 at multiple positions
+      const card1_1 = new Card(CardValue.of(1), CardColor.RED);
+      const card1_2 = new Card(CardValue.of(1), CardColor.RED);
+      board.placeCard(card1_1, Position.of(0, 0));
+      board.placeCard(card1_2, Position.of(2, 2));
+
+      // Hand has a RED 4
+      const hand = [new Card(CardValue.of(4), CardColor.RED)];
+
+      const suggestions = detector.suggestWinningPlacements(board, hand);
+
+      // Should find multiple suggestions (one for each RED 1)
+      const twoCardSuggestions = suggestions.filter(
+        s => s.expectedCombo.type === ComboType.TWO_CARDS_1_4
+      );
+      expect(twoCardSuggestions.length).toBeGreaterThan(1);
+    });
+  });
 });
