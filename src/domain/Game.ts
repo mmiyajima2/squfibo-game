@@ -152,14 +152,8 @@ export class Game {
     // ゲーム終了判定
     // 1. 全ての星が配布された
     // 2. 山札が空
-    // 3. 盤面が満杯で、両プレイヤーとも手札がない（配置不可能）
     if (this.totalStars === 0 || this.deck.isEmpty()) {
       this.gameState = GameState.FINISHED;
-    } else if (this.board.isFull()) {
-      const bothPlayersOutOfCards = this.players.every(player => !player.hand.hasCards());
-      if (bothPlayersOutOfCards) {
-        this.gameState = GameState.FINISHED;
-      }
     }
 
     this.currentPlayerIndex = this.currentPlayerIndex === 0 ? 1 : 0;

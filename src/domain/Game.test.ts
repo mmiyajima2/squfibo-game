@@ -539,68 +539,6 @@ describe('Game', () => {
     });
   });
 
-  describe('endTurn - board full game over', () => {
-    it('should end game when board is full and both players have no hand cards', () => {
-      // 両プレイヤーの手札を全て使い切る
-      const player1 = game.players[0];
-      const player2 = game.players[1];
-
-      while (player1.hand.hasCards()) {
-        const card = player1.hand.getCards()[0];
-        player1.playCard(card);
-      }
-
-      while (player2.hand.hasCards()) {
-        const card = player2.hand.getCards()[0];
-        player2.playCard(card);
-      }
-
-      // 盤面を満杯にする
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 3; col++) {
-          const position = Position.of(row, col);
-          const card = new Card(
-            CardValue.of(1),
-            CardColor.RED,
-            `test-card-${row}-${col}`
-          );
-          game.board.placeCard(card, position);
-        }
-      }
-
-      expect(game.board.isFull()).toBe(true);
-      expect(player1.hand.hasCards()).toBe(false);
-      expect(player2.hand.hasCards()).toBe(false);
-
-      game.endTurn();
-
-      expect(game.isGameOver()).toBe(true);
-      expect(game.getGameState()).toBe(GameState.FINISHED);
-    });
-
-    it('should not end game when board is full but players still have cards', () => {
-      // 盤面を満杯にする
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 3; col++) {
-          const position = Position.of(row, col);
-          const card = new Card(
-            CardValue.of(1),
-            CardColor.RED,
-            `test-card-${row}-${col}`
-          );
-          game.board.placeCard(card, position);
-        }
-      }
-
-      expect(game.board.isFull()).toBe(true);
-      expect(game.players[0].hand.hasCards()).toBe(true);
-
-      game.endTurn();
-
-      // まだ手札があるのでゲームは終了しない
-      expect(game.isGameOver()).toBe(false);
-    });
-  });
 
   describe('endTurn - auto draw when hand is empty', () => {
     it('should auto draw 1 card when next player has no hand cards', () => {
