@@ -3,7 +3,7 @@ import { Deck } from './entities/Deck';
 import { Player } from './entities/Player';
 import { Card } from './entities/Card';
 import { Position } from './valueObjects/Position';
-import { Combo, isClearingCombo } from './services/Combo';
+import { Combo } from './services/Combo';
 import type { CPUDifficulty } from '../types/CPUDifficulty';
 import { CPUStrategyFactory } from './services/cpu/CPUStrategyFactory';
 import type { CPUTurnResult } from './services/cpu/CPUStrategy';
@@ -118,23 +118,9 @@ export class Game {
       return false;
     }
 
-    // Handle clearing yaku: clear all cards from the board
-    if (isClearingCombo(combo.type)) {
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 3; col++) {
-          const pos = Position.of(row, col);
-          const card = this.board.removeCard(pos);
-          if (card) {
-            this.discardPile.push(card);
-          }
-        }
-      }
-      return true; // No card refill or star reward
-    }
-
     const currentPlayer = this.getCurrentPlayer();
-    const cardCount = combo.getCardCount();
 
+    // カードを除去（役のカードのみ）
     for (const position of combo.positions) {
       const card = this.board.removeCard(position);
       if (card) {
@@ -142,7 +128,9 @@ export class Game {
       }
     }
 
-    for (let i = 0; i < cardCount; i++) {
+    // カードをドロー（役に応じた枚数）
+    const drawCount = combo.getDrawCount();
+    for (let i = 0; i < drawCount; i++) {
       if (this.deck.isEmpty()) {
         break;
       }
@@ -152,7 +140,8 @@ export class Game {
       }
     }
 
-    const starsToAward = Math.min(cardCount, this.totalStars);
+    // 星を獲得（役に応じた個数）
+    const starsToAward = Math.min(combo.getRewardStars(), this.totalStars);
     currentPlayer.addStars(starsToAward);
     this.totalStars -= starsToAward;
 

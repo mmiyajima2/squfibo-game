@@ -8,6 +8,6 @@ export const CPU_DIFFICULTY_LABELS: Record<CPUDifficulty, string> = {
 
 export const CPU_DIFFICULTY_ENABLED: Record<CPUDifficulty, boolean> = {
   Easy: true,
-  Normal: false,
+  Normal: true,
   Hard: false,
 };

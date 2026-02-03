@@ -22,39 +22,37 @@ CPU（Normal）は以下の手順でカードを配置します：
 
 #### 1.1 盤面が満杯の場合
 - **処理**：盤面上のカードを1枚除去してから配置
-- **選択方法**：ランダムに1枚選んで捨て札にする
-- **考慮事項**：特に戦略的な判断は行わない（Normal難易度では盤面管理までは行わない）
+- **除去方法**：ランダムに1枚選んで捨て札にする
+- **配置方法**：除去後、通常の戦略的配置（1.2の手順）を行う
+- **考慮事項**：除去自体は戦略的な判断を行わない（Normal難易度では盤面管理までは行わない）
 
 #### 1.2 手札がある場合（戦略的配置）
 CPU（Normal）の核心となる戦略部分です。
 
 **手順**：
 1. **役成立可能性の探索**
-   - 手札の各カードについて、盤面の空きマス全てに対して仮置きをシミュレート
-   - `ComboDetector.detectCombos()`を使用して、役が成立するかチェック
-   - 成立する配置候補をリスト化
+   - `ComboDetector.suggestWinningPlacements(board, hand)`を使用して、役が成立する配置候補を取得
+   - このメソッドは手札の各カードについて、盤面の空きマス全てに対して仮置きをシミュレートし、役が成立する配置候補を優先順位付きでリスト化して返す
 
 2. **配置候補の優先順位判定**
-   - 複数の配置候補がある場合、以下の優先順位で1つ選択：
-     1. **THREE_CARDS**（1+4+16の3枚役）を成立させる配置
-     2. **TWO_CARDS_4_9**（4+9の2枚役）を成立させる配置
-     3. **TWO_CARDS_1_4**（1+4の2枚役）を成立させる配置
-     4. **CLEARING_YAKU**（調調）を成立させる配置
+   - `suggestWinningPlacements()`は以下の優先順位で既にソートされた配置候補を返す：
+     1. **THREE_CARDS**（1+4+16の大役）を成立させる配置
+     2. **TRIPLE_MATCH**（同じ数字3枚の小役）を成立させる配置
    - 同じ優先度の配置が複数ある場合はランダムに選択
 
 3. **役が成立しない場合のランダム配置**
    - 役が成立する配置が1つもない場合、以下の優先順位でカードを配置：
-     1. **1**をランダムな空きマスに置く（役の起点として最重要）
-     2. **16**をランダムな空きマスに置く（3枚役の完成に必要）
-     3. **9**をランダムな空きマスに置く（4-9役の完成に必要）
-     4. **4**をランダムな空きマスに置く（単体での戦略的価値が低い）
+     1. **9**をランダムな空きマスに置く（大役にできない）
+     2. **16**をランダムな空きマスに置く
+     3. **4**をランダムな空きマスに置く
+     4. **1**をランダムな空きマスに置く
    - 手札に該当する数字がない場合は、次の優先順位のカードを配置
    - 空きマスの選択はランダム
 
 #### 1.3 手札が0枚の場合
 - **処理**：山札の一番上のカードを1枚引き、そのまま配置（ゲームルール通り）
 - **選択方法**：
-  1. 引いたカードで役が成立する位置を探索（1.2の手順1-2と同じ）
+  1. 引いたカードで役が成立する位置を探索（`suggestWinningPlacements(board, [引いたカード])`を使用）
   2. 役が成立する位置があればその位置に配置
   3. なければランダムな空きマスに配置
 
@@ -67,10 +65,8 @@ CPU（Normal）の核心となる戦略部分です。
 今回置いたカードを含む成立可能な役を全て検出します。
 
 検出される可能性のある役：
-- **TWO_CARDS_1_4**：赤または青の1+4（星2個）
-- **TWO_CARDS_4_9**：赤または青の4+9（星2個）
-- **THREE_CARDS**：赤または青の1+4+16（星3個）
-- **CLEARING_YAKU**：赤または青の同じ数字3枚（盤面全消去、星なし）
+- **THREE_CARDS**（大役）：赤または青の1+4+16（星3個）
+- **TRIPLE_MATCH**（小役）：赤または青の同じ数字3枚（星1個）
 
 #### 2.2 役の申告判定（見落とし機構）
 
@@ -103,13 +99,9 @@ if (検出された役がある) {
 複数の役が検出された場合、以下の優先順位で1つだけ選択します：
 
 1. **THREE_CARDS**（1+4+16）
-   - 理由：最も多くの星（3個）を獲得できるため
-2. **TWO_CARDS_4_9**（4+9）
-   - 理由：2枚役の中で大きい数字の組み合わせ
-3. **TWO_CARDS_1_4**（1+4）
-   - 理由：2枚役の基本
-4. **CLEARING_YAKU**（同じ数字3枚）
-   - 理由：星が獲得できないため最低優先
+   - 理由：最も多くの星（3個）を獲得できる大役のため
+2. **TRIPLE_MATCH**（同じ数字3枚）
+   - 理由：星1個を獲得できる小役
 
 **注意**：見落とし判定（5%）は、この優先順位選択の**後**に行われます。
 
@@ -129,12 +121,28 @@ CPU（Normal）は以下の終了条件を自動的に認識します：
 
 ### 使用する主要クラス・メソッド
 
+#### 配置候補の探索（CPU戦略用）
+```typescript
+ComboDetector.suggestWinningPlacements(board: Board, hand: Card[]): PlacementSuggestion[]
+
+interface PlacementSuggestion {
+  card: Card;           // 手札のどのカード
+  position: Position;   // どの位置に置くか
+  comboType: ComboType; // 成立する役の種類
+  priority: number;     // 優先度（THREE_CARDS=1, TRIPLE_MATCH=2）
+}
+```
+- 手札の各カードについて、役が成立する配置候補を探索
+- 優先度順でソートされた配置候補のリストを返す
+- CPU戦略の実装に最適化されたメソッド
+
 #### 役の検出
 ```typescript
 ComboDetector.detectCombos(board: Board, lastPlacedPosition: Position): Combo[]
 ```
 - 最後に置いたカードを含む全ての役を返す
 - 返り値の`Combo`オブジェクトには`type`、`cards`、`positions`が含まれる
+- カード配置後の役の申告時に使用
 
 #### 役の妥当性検証
 ```typescript
@@ -163,59 +171,34 @@ function findBestPlacement(hand: Card[], board: Board): {
   position: Position,
   comboType: ComboType | null
 } | null {
-  const placements = []
+  // suggestWinningPlacementsを使って配置候補を取得
+  // このメソッドは既に優先順位順にソートされている
+  const suggestions = ComboDetector.suggestWinningPlacements(board, hand)
 
-  // 手札の各カードについて
-  for (const card of hand) {
-    // 空きマス全てについて
-    for (const pos of board.getEmptyPositions()) {
-      // 仮置きをシミュレート
-      board.placeCard(card, pos)
-
-      // 役が成立するかチェック
-      const combos = ComboDetector.detectCombos(board, pos)
-
-      // 仮置きを戻す
-      board.removeCard(pos)
-
-      // 役が成立する場合、候補に追加
-      if (combos.length > 0) {
-        placements.push({
-          card,
-          position: pos,
-          comboType: combos[0].type  // 最優先の役
-        })
-      }
-    }
+  // 役が成立する配置候補がない場合
+  if (suggestions.length === 0) {
+    return null
   }
 
-  // 優先順位に従ってソート
-  placements.sort((a, b) => {
-    return getPriority(a.comboType) - getPriority(b.comboType)
-  })
+  // 最優先の配置候補を取得
+  const topPriority = suggestions[0].priority
+  const topSuggestions = suggestions.filter(s => s.priority === topPriority)
 
-  // 最優先の配置を返す（同優先度ならランダム）
-  if (placements.length > 0) {
-    const topPriority = getPriority(placements[0].comboType)
-    const topPlacements = placements.filter(
-      p => getPriority(p.comboType) === topPriority
-    )
-    return topPlacements[Math.floor(Math.random() * topPlacements.length)]
-  }
+  // 同じ優先度の候補が複数ある場合はランダムに選択
+  const selected = topSuggestions[Math.floor(Math.random() * topSuggestions.length)]
 
-  return null
-}
-
-function getPriority(comboType: ComboType | null): number {
-  switch (comboType) {
-    case 'THREE_CARDS': return 1
-    case 'TWO_CARDS_4_9': return 2
-    case 'TWO_CARDS_1_4': return 3
-    case 'CLEARING_YAKU': return 4
-    default: return 999
+  return {
+    card: selected.card,
+    position: selected.position,
+    comboType: selected.comboType
   }
 }
 ```
+
+**実装のポイント**：
+- `suggestWinningPlacements()`により、仮置きシミュレーションのロジックが隠蔽される
+- 役の優先順位も`suggestWinningPlacements()`内部で処理される
+- CPU戦略の実装がシンプルで読みやすくなる
 
 ---
 
@@ -232,26 +215,26 @@ function getPriority(comboType: ComboType | null): number {
 ### テストケース2：戦略的配置の検証
 - **目的**：役が成立する位置にカードを配置することを確認
 - **手順**：
-  1. 盤面に赤4が配置されている状態を作る
-  2. 手札に赤1と青9がある状態でCPUのターンを実行
-  3. CPUが赤1を赤4に隣接する位置に配置することを確認
-- **期待結果**：役が成立する配置を選択する（見落とさない場合）
+  1. 盤面に赤1と赤4が隣接して配置されている状態を作る
+  2. 手札に赤16がある状態でCPUのターンを実行
+  3. CPUが赤16を赤1または赤4に隣接する位置に配置することを確認
+- **期待結果**：THREE_CARDSが成立する配置を選択する（見落とさない場合）
 
 ### テストケース3：優先順位の検証
 - **目的**：複数の役が成立可能な場合、正しい優先順位で選択されることを確認
 - **手順**：
-  1. 手札に赤1と赤9があり、盤面に赤4が2箇所にある状況を作る
-  2. 1を置けば1-4役、9を置けば4-9役が成立する状態
-  3. CPUが4-9役を優先して赤9を配置することを確認
-- **期待結果**：優先順位に従って4-9役を選択
+  1. 盤面にTHREE_CARDSとTRIPLE_MATCHの両方が成立可能な状況を作る
+  2. 手札に両方の役を成立させられるカードがある状態
+  3. CPUがTHREE_CARDSを優先して配置することを確認
+- **期待結果**：優先順位に従って大役（THREE_CARDS）を選択
 
 ### テストケース4：ランダム配置の優先順位検証
 - **目的**：役が成立しない場合、カードの優先順位に従って配置することを確認
 - **手順**：
   1. 役が成立しない空の盤面を用意
   2. 手札に1, 4, 9, 16が全て揃っている状態でCPUのターンを実行
-  3. CPUが「1」を優先的に配置することを確認
-- **期待結果**：1 > 16 > 9 > 4の順で優先される
+  3. CPUが「16」を優先的に配置することを確認
+- **期待結果**：16 > 9 > 1 > 4の順で優先される
 
 ---
 
@@ -292,7 +275,7 @@ function getPriority(comboType: ComboType | null): number {
 | 見落とし率 | 20% | 5% |
 | 配置戦略 | ランダム配置のみ | 役成立を狙った戦略的配置 |
 | 先読み能力 | なし | あり（仮置きシミュレート） |
-| カード優先度 | なし | あり（1 > 16 > 9 > 4） |
+| カード優先度 | なし | あり（16 > 9 > 1 > 4） |
 | 実装難易度 | 低 | 中 |
 | 対象プレイヤー | 初心者 | 中級者 |
 

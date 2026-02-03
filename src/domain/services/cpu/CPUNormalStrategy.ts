@@ -2,18 +2,19 @@ import { Card } from '../../entities/Card';
 import { Position } from '../../valueObjects/Position';
 import { Combo, ComboType } from '../Combo';
 import { ComboDetector } from '../ComboDetector';
+import type { PlacementSuggestion } from '../ComboDetector';
 import type { Game } from '../../Game';
 import type { CPUStrategy, CPUTurnResult, CPUTurnPlan, CPUActionStep } from './CPUStrategy';
 
 /**
- * CPU（Easy）戦略の実装
+ * CPU（Normal）戦略の実装
  *
  * 【特徴】
- * - カード配置：完全ランダム
- * - 役の申告：20%の確率で見落とす
- * - 対象プレイヤー：ゲームに慣れ始めた小学生
+ * - カード配置：役成立を狙った戦略的配置
+ * - 役の申告：5%の確率で見落とす
+ * - 対象プレイヤー：ゲームのルールを理解した中級者
  */
-export class CPUEasyStrategy implements CPUStrategy {
+export class CPUNormalStrategy implements CPUStrategy {
   private readonly comboDetector = new ComboDetector();
 
   /**
@@ -137,11 +138,16 @@ export class CPUEasyStrategy implements CPUStrategy {
   }
 
   /**
-   * カード配置を決定する
+   * カード配置を決定する（戦略的配置）
    *
    * 【戦略】
-   * - 手札がある場合：手札からランダムに1枚選び、空きマスにランダムに配置
-   * - 手札がない場合：空きマスをランダムに選択（山札から引いて配置する準備）
+   * 1. 手札がある場合：
+   *    - suggestWinningPlacementsで役が成立する配置を探索
+   *    - 役が成立する配置があればそれを選択（優先順位順）
+   *    - なければカードの優先順位（16 > 9 > 1 > 4）でランダム配置
+   * 2. 手札がない場合：
+   *    - 山札から引いたカードで役が成立する位置を探索
+   *    - なければランダム配置
    *
    * @param game 現在のゲーム状態
    * @param removedPosition 除去予定の位置（planTurn時のみ使用）
@@ -155,17 +161,98 @@ export class CPUEasyStrategy implements CPUStrategy {
       throw new Error('No empty positions available');
     }
 
-    const position = this.selectRandomPosition(emptyPositions);
-
     if (currentPlayer.hand.hasCards()) {
-      // 手札からランダムに1枚選択
+      // 手札からカードを選択（戦略的配置）
       const handCards = currentPlayer.hand.getCards();
-      const card = this.selectRandomCard(handCards);
+
+      // 役が成立する配置を探索
+      const suggestions = this.comboDetector.suggestWinningPlacements(game.board, handCards);
+
+      if (suggestions.length > 0) {
+        // 役が成立する配置がある場合、最優先の配置を選択
+        const bestPlacement = this.selectBestPlacement(suggestions);
+        return { card: bestPlacement.card, position: bestPlacement.position };
+      }
+
+      // 役が成立しない場合、カードの優先順位に従って配置
+      const { card, position } = this.selectCardByPriority(handCards, emptyPositions);
       return { card, position };
     } else {
-      // 手札がない場合、位置だけを決定（実際のカードはdrawAndPlaceCardで引く）
+      // 手札がない場合、山札から引いて配置
+      const deckCard = game.deck.peek();
+      if (!deckCard) {
+        // 山札が空の場合、エラー（通常は発生しないはず）
+        throw new Error('Deck is empty');
+      }
+
+      // 引いたカードで役が成立する位置を探索
+      const suggestions = this.comboDetector.suggestWinningPlacements(game.board, [deckCard]);
+
+      if (suggestions.length > 0) {
+        // 役が成立する位置があればその位置を選択
+        const bestPlacement = this.selectBestPlacement(suggestions);
+        return { card: null, position: bestPlacement.position };
+      }
+
+      // 役が成立しない場合、ランダム配置
+      const position = this.selectRandomPosition(emptyPositions);
       return { card: null, position };
     }
+  }
+
+  /**
+   * 配置候補から最適な配置を選択する
+   *
+   * 【戦略】
+   * - suggestWinningPlacementsは既に優先順位順にソートされている
+   * - 最優先の配置候補を取得し、同じ優先度が複数ある場合はランダムに選択
+   *
+   * @param suggestions 配置候補のリスト
+   * @returns 選択された配置
+   */
+  private selectBestPlacement(suggestions: PlacementSuggestion[]): PlacementSuggestion {
+    if (suggestions.length === 0) {
+      throw new Error('No placement suggestions available');
+    }
+
+    // 最優先の配置候補を取得
+    const topPriority = suggestions[0].priority;
+    const topSuggestions = suggestions.filter((s) => s.priority === topPriority);
+
+    // 同じ優先度の候補が複数ある場合はランダムに選択
+    const randomIndex = Math.floor(Math.random() * topSuggestions.length);
+    return topSuggestions[randomIndex];
+  }
+
+  /**
+   * カードの優先順位に従って配置を選択する
+   *
+   * 【優先順位】
+   * 1. 16（相手に役を作らせにくい）
+   * 2. 9（相手に役を作らせにくい）
+   * 3. 1（役の起点になるが優先度は低め）
+   * 4. 4（最も貴重なカードなので最後まで温存）
+   *
+   * @param cards 手札のカードリスト
+   * @param emptyPositions 空いている位置のリスト
+   * @returns 選択されたカードと位置
+   */
+  private selectCardByPriority(cards: Card[], emptyPositions: Position[]): { card: Card; position: Position } {
+    const priorities = [16, 9, 1, 4];
+
+    // 優先順位に従ってカードを選択
+    for (const value of priorities) {
+      const card = cards.find((c) => c.value.value === value);
+      if (card) {
+        const position = this.selectRandomPosition(emptyPositions);
+        return { card, position };
+      }
+    }
+
+    // フォールバック：最初のカードを返す（通常はここに到達しない）
+    const card = cards[0];
+    const position = this.selectRandomPosition(emptyPositions);
+    return { card, position };
   }
 
   /**
@@ -173,7 +260,7 @@ export class CPUEasyStrategy implements CPUStrategy {
    *
    * 【戦略】
    * 1. 検出された役の中から優先順位に従って1つ選択
-   * 2. 20%の確率（1/5）で見落とす
+   * 2. 5%の確率（1/20）で見落とす
    *
    * 【優先順位】
    * THREE_CARDS（大役）> TRIPLE_MATCH（小役）
@@ -192,7 +279,7 @@ export class CPUEasyStrategy implements CPUStrategy {
     // 優先順位に従って役を選択
     const selectedCombo = this.selectComboByPriority(detectedCombos);
 
-    // 20%の確率で見落とす
+    // 5%の確率で見落とす
     if (this.shouldMissCombo()) {
       return { claimedCombo: null, missedCombo: selectedCombo };
     }
@@ -227,14 +314,14 @@ export class CPUEasyStrategy implements CPUStrategy {
    * 役を見落とすかどうかを判定する
    *
    * 【仕様】
-   * - 1～5の整数をランダムに生成
-   * - 5が出た場合（20%の確率）、役を見落とす
+   * - 1～20の整数をランダムに生成
+   * - 20が出た場合（5%の確率）、役を見落とす
    *
    * @returns true: 見落とす, false: 申告する
    */
   private shouldMissCombo(): boolean {
-    const randomValue = Math.floor(Math.random() * 5) + 1;
-    return randomValue === 5;
+    const randomValue = Math.floor(Math.random() * 20) + 1;
+    return randomValue === 20;
   }
 
   /**
@@ -267,17 +354,6 @@ export class CPUEasyStrategy implements CPUStrategy {
   private selectRandomPosition(positions: Position[]): Position {
     const randomIndex = Math.floor(Math.random() * positions.length);
     return positions[randomIndex];
-  }
-
-  /**
-   * ランダムにカードを選択する
-   *
-   * @param cards カードのリスト
-   * @returns ランダムに選ばれたカード
-   */
-  private selectRandomCard(cards: Card[]): Card {
-    const randomIndex = Math.floor(Math.random() * cards.length);
-    return cards[randomIndex];
   }
 
   /**

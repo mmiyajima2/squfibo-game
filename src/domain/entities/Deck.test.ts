@@ -41,9 +41,9 @@ describe('Deck', () => {
     expect(deck.getCardCount()).toBe(20);
   });
 
-  it('should create initial deck with 64 cards', () => {
+  it('should create initial deck with 46 cards', () => {
     const deck = Deck.createInitialDeck();
-    expect(deck.getCardCount()).toBe(64);
+    expect(deck.getCardCount()).toBe(46);
   });
 
   it('should create initial deck with correct distribution', () => {
@@ -61,13 +61,13 @@ describe('Deck', () => {
       countByValueAndColor.set(key, (countByValueAndColor.get(key) || 0) + 1);
     }
 
-    expect(countByValueAndColor.get('RED:1')).toBe(8);
-    expect(countByValueAndColor.get('BLUE:1')).toBe(8);
-    expect(countByValueAndColor.get('RED:4')).toBe(8);
-    expect(countByValueAndColor.get('BLUE:4')).toBe(8);
+    expect(countByValueAndColor.get('RED:1')).toBe(5);
+    expect(countByValueAndColor.get('BLUE:1')).toBe(5);
+    expect(countByValueAndColor.get('RED:4')).toBe(5);
+    expect(countByValueAndColor.get('BLUE:4')).toBe(5);
     expect(countByValueAndColor.get('RED:9')).toBe(8);
     expect(countByValueAndColor.get('BLUE:9')).toBe(8);
-    expect(countByValueAndColor.get('RED:16')).toBe(8);
-    expect(countByValueAndColor.get('BLUE:16')).toBe(8);
+    expect(countByValueAndColor.get('RED:16')).toBe(5);
+    expect(countByValueAndColor.get('BLUE:16')).toBe(5);
   });
 });

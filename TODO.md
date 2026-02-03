@@ -1,185 +1,318 @@
 # タスク
 
-## [ ] 内部実装の調査依頼
-- Boardクラスについて、今どこになんのカードをおいたら、役になりうるか？を返すメソッドの実装は可能かしりたい
-- 意図としては、CPUのカード配置戦略のロジックに利用できるかもしれないとおもっている
-- 全てのパターンを網羅的に出すひつようはなく、「候補の一部を出す」、という意味のメソッドでよい（計算量をおさえる）
-- そのメソッド結果をもとにして、CPUの戦略ではそのカードが手札にあれば、それをおくという風にできないか
-- ~~まずは意意だけほしい、以下に意見をかいてほしい~~
-- 下記の調査結果をもとにした、推奨実装を進めてほしい
+## [✓] バグ:CPU(Noarmal)でボード満杯時にエラーがでる（完了:2026-02-03）
+- 人間プレイヤー（下側）の場合は、カード破棄->配置と問題なくできる
+- **修正完了**: planTurnメソッドで、ボード満杯時に一時的にカードを除去し、シミュレーション後に元に戻すように修正
+- 対象ファイル: CPUNormalStrategy.ts, CPUEasyStrategy.ts
+- テスト結果: 123個のテストすべてパス
 
-### Claudeの意見
+## [✓] 要望:仕様変更の修正計画をだしてほしい（完了:2026-02-03）
 
-#### 結論：実装は十分可能です
+- ./docs/spec_ja.md, cpu_easy_spec.md, cpu_normal_spec.md の仕様を変更した
+- これについて、プログラムの変更計画をだして、以下に記載してほしい
 
-提案されたメソッド `Board.suggestWinningPlacements()` は実装可能で、CPU戦略に有効活用できます。
+**実装完了**: 2026-02-03
+- すべてのコード修正完了（13ファイル）
+- テスト実行: 123個のテストすべてパス
+- ビルド成功: 型エラーなし
 
-#### 実装アプローチ
+### Claudeの計画
 
-**メソッドシグネチャ案：**
-```typescript
-// Boardクラスに追加
-suggestWinningPlacements(hand: Card[]): PlacementSuggestion[]
+## 仕様変更の概要
 
-interface PlacementSuggestion {
-  card: Card;           // 手札のどのカード
-  position: Position;   // どの位置に置くか
-  comboType: ComboType; // 成立する役の種類
-  priority: number;     // 優先度（調調=4, 3枚役=3, 4-9=2, 1-4=1）
-}
-```
+仕様ドキュメント（spec_ja.md, cpu_easy_spec.md, cpu_normal_spec.md）において、以下の変更が行われました：
 
-**アルゴリズム概要：**
-```
-1. 手札の各カードについて
-2. 盤面の空きマス（最大9箇所）を全てチェック
-3. 仮想的に配置してComboDetector.detectCombos()を実行
-4. 役が成立する場合、PlacementSuggestionとして記録
-5. 優先度順（調調 > 3枚役 > 4-9 > 1-4）でソートして返却
-```
+1. **2枚役の廃止**
+   - TWO_CARDS_1_4（1+4=5）を削除
+   - TWO_CARDS_4_9（4+9=13）を削除
 
-**計算量：**
-- 最悪ケース：O(手札サイズ × 9マス × 役判定コスト)
-- 手札=5枚、盤面=空き9マス → 最大45パターンのチェック
-- 各役判定は既存のComboDetectorを再利用するため高速
-- **実用上問題なし**
+2. **役の再定義（すべて3枚役に統一）**
+   - **大役: THREE_CARDS**（1+4+16）
+     - 3枚除去 / 3枚ドロー / 星3個
+   - **小役: TRIPLE_MATCH**（同じ数字・同じ色の3枚）
+     - 3枚除去 / 1枚ドロー / 星1個
+     - 旧名称: CLEARING_YAKU（盤面全クリア・報酬なし）から仕様変更
 
-#### なぜ実装可能か
+3. **CPU優先順位の変更**
+   - 旧: THREE_CARDS > TWO_CARDS_4_9 > TWO_CARDS_1_4 > CLEARING_YAKU
+   - 新: THREE_CARDS（大役）> TRIPLE_MATCH（小役）
 
-1. **ComboDetectorが既に独立している**
-   - `ComboDetector.detectCombos(board, position)` は既存メソッド
-   - ボードを変更せずに仮想配置での判定が可能
+---
 
-2. **明確な役の種類**
-   - 4種類の役のみ（1-4、4-9、1-4-16、調調）
-   - 優先度付けが容易
+## 影響を受けるファイル一覧
 
-3. **盤面サイズが小さい**
-   - 3×3=9マスのみ
-   - 全探索しても計算コストが低い
+### ドメインロジック層（5ファイル）
+1. `src/domain/services/Combo.ts`
+2. `src/domain/services/ComboDetector.ts`
+3. `src/domain/Game.ts`
+4. `src/domain/services/cpu/CPUEasyStrategy.ts`
+5. `src/domain/services/cpu/CPUNormalStrategy.ts`
 
-#### CPU戦略での活用方法
+### テスト層（5ファイル）
+6. `src/domain/services/Combo.test.ts`
+7. `src/domain/services/ComboDetector.test.ts`
+8. `src/domain/Game.test.ts`
+9. `src/domain/services/cpu/CPUEasyStrategy.test.ts`
+10. `src/domain/services/cpu/CPUNormalStrategy.test.ts`
 
-**Normal難易度での実装例：**
-```typescript
-// CPUのターン処理
-const suggestions = board.suggestWinningPlacements(cpuHand);
+### UI層（3ファイル）
+11. `src/components/Game/GameContainer.tsx`
+12. `src/components/ComboRules/ComboRulesPanel.tsx`
+13. `src/components/Commentary/CommentaryArea.tsx`
 
-// 5%の確率で見落とし（Normal仕様）
-if (Math.random() < 0.05) {
-  // ランダム配置にフォールバック
-  return randomPlacement(cpuHand);
-}
+---
 
-// 優先度の高い順に配置
-if (suggestions.length > 0) {
-  const bestSuggestion = suggestions[0]; // すでに優先度順
-  return { card: bestSuggestion.card, position: bestSuggestion.position };
-}
+## 詳細な修正計画
 
-// 役が成立しない場合は戦略的ランダム配置
-return strategicRandomPlacement(cpuHand); // 1→16→9→4の優先順位
-```
+### Phase 1: ドメインロジックの修正
 
-#### 実装上の考慮点
+#### 1-1. `src/domain/services/Combo.ts`
+**変更内容:**
+- [ ] ComboTypeから `TWO_CARDS_1_4`, `TWO_CARDS_4_9` を削除
+- [ ] `CLEARING_YAKU` を `TRIPLE_MATCH` に名称変更
+- [ ] `isClearingCombo()` 関数を削除（TRIPLE_MATCHは通常の小役として扱う）
+- [ ] `getRewardStars()` メソッドを修正:
+  - 旧: `isClearingCombo(this.type) ? 0 : this.cards.length`
+  - 新: `this.type === ComboType.THREE_CARDS ? 3 : 1`
+- [ ] 新しいメソッド `getDrawCount()` を追加:
+  - THREE_CARDS → 3枚
+  - TRIPLE_MATCH → 1枚
 
-1. **「候補の一部を出す」方針について**
-   - 全パターンチェックでも計算量は小さいため、全候補を返却することを推奨
-   - 呼び出し側で「上位N件だけ使う」「ランダムに1件選ぶ」などの制御が可能
-   - 柔軟性が高い
+**理由:** 役の定義が根本的に変わるため、型定義と報酬計算を変更
 
-2. **Board vs Gameレイヤー**
-   - 現状、Boardは純粋な盤面管理のみ
-   - 役判定はComboDetectorが担当
-   - **提案：** `ComboDetector.suggestWinningPlacements(board, hand)` として実装する方が設計的に自然
-   - これにより責務の分離を維持できる
+---
 
-3. **パフォーマンス最適化（必要に応じて）**
-   - 「調調が成立する位置が見つかったら即座に返す」など早期リターンも可能
-   - 現状の盤面サイズでは不要な最適化の可能性が高い
+#### 1-2. `src/domain/services/ComboDetector.ts`
+**変更内容:**
+- [ ] `findTwoCardCombos()` メソッドを完全削除
+- [ ] `detectCombos()` から `findTwoCardCombos()` の呼び出しを削除:
+  ```typescript
+  // 削除する行（29-35行目）
+  const twoCardCombos = this.findTwoCardCombos(...);
+  combos.push(...twoCardCombos);
+  ```
+- [ ] `findClearingYaku()` メソッド内の `ComboType.CLEARING_YAKU` を `ComboType.TRIPLE_MATCH` に変更
+- [ ] `getComboTypePriority()` メソッドを修正:
+  - 旧: THREE_CARDS=3, TWO_CARDS_4_9=2, TWO_CARDS_1_4=1, CLEARING_YAKU=0
+  - 新: THREE_CARDS=3, TRIPLE_MATCH=1
+- [ ] `checkCombo()` メソッドから2枚役の処理（205-217行目）を削除
+- [ ] `areAdjacentTwoCards()` メソッド: 保持（3枚役の隣接判定で内部的に使用されているため）
 
-#### 推奨する実装方針
+**理由:** 2枚役の検出ロジックが不要になり、TRIPLE_MATCHへの名称変更が必要
 
-1. **ComboDetectorクラスに `suggestWinningPlacements()` メソッドを追加**
-2. **全候補を優先度順で返却**（呼び出し側で制御）
-3. **既存のdetectCombos()ロジックを最大限再利用**
-4. **CPU戦略レイヤーでこのメソッドを活用**
+---
 
-この設計により、Normal/Hard難易度のCPUが戦略的にカードを配置できるようになり、ゲームの面白さが大幅に向上します。
+#### 1-3. `src/domain/Game.ts`
+**変更内容:**
+- [ ] `isClearingCombo` のインポートと使用を削除
+- [ ] `claimCombo()` メソッドを修正:
+  - CLEARING_YAKU用の特殊処理（盤面全クリア）を削除
+  - すべての役を統一的に処理:
+    ```typescript
+    // カードを除去（役のカードのみ）
+    for (const position of combo.positions) { ... }
 
+    // カードをドロー（combo.getDrawCount()枚）
+    const drawCount = combo.getDrawCount();
+    for (let i = 0; i < drawCount; i++) { ... }
 
-## [x] CPU（Noarmal）の行動仕様書をつくってほしい
-- ✅ ./docs/cpu_easy_spec.md を参考にして別ファイルでつくること
-- ✅ 以下をNormal用の戦略とする
-  - 役の見落とし率は、5%にする
-  - 盤面をみて、役が成立できるなら、以下の順位でカードをおく
-    1. 1-4-16の3枚役を申告
-    2. 4-9の2枚役を申告（優先順位を1-4より上に変更）
-    3. 1-4の2枚役を申告
-    4. 調調を申告
-  - 成立可能な役がないなら、以下の順位でランダムにカードをおく
-    1. 1をおく（役の起点として最重要）
-    2. 16をおく
-    3. 9をおく
-    4. 4をおく
-  - ✅ まずはこのNormalの仕仕様ついて意見を記載
-  - ✅ `docs/cpu_normal_spec.md` を作成完了（2026-02-02）
+    // 星を獲得（combo.getRewardStars()個）
+    const starsToAward = Math.min(combo.getRewardStars(), this.totalStars);
+    ```
 
-### Claudeの意見
+**理由:** TRIPLE_MATCHが通常の小役になるため、特殊処理が不要
 
-#### 良い点
-1. **段階的な難易度設計**
-   - 見落とし率：Easy 20% → Normal 5% → Hard 0%（予想）という自然な難易度曲線
-   - プレイヤーが成長を実感しやすい設計
+---
 
-2. **役の優先順位が明確**
-   - 3枚役 > 2枚役（4-9） > 2枚役（1-4） > 調調という優先順位は合理的
-   - 星の獲得数を最大化する戦略として妥当
+#### 1-4. `src/domain/services/cpu/CPUEasyStrategy.ts`
+**変更内容:**
+- [ ] `selectComboByPriority()` メソッドの優先順位配列を修正:
+  - 旧: `[THREE_CARDS, TWO_CARDS_4_9, TWO_CARDS_1_4, CLEARING_YAKU]`
+  - 新: `[THREE_CARDS, TRIPLE_MATCH]`
+- [ ] コメント内の優先順位の説明を更新:
+  - 旧: `THREE_CARDS > TWO_CARDS_4_9 > TWO_CARDS_1_4 > CLEARING_YAKU`
+  - 新: `THREE_CARDS（大役）> TRIPLE_MATCH（小役）`
 
-3. **Easyとの明確な差別化**
-   - Easyは「ランダム配置→役確認」
-   - Normalは「役成立を狙って配置→失敗時ランダム」
-   - 戦略性のレベルが明確に異なる
+**理由:** CPU仕様書に記載された新しい優先順位に合わせる
 
-#### 検討が必要な点
+---
 
-1. **ランダム配置時の優先順位について**
-   - 現在の提案：16 > 9 > 1 > 4
-   - 疑問点：なぜ「1」が「4」より優先度が低いのか？
-   - 提案：**1 > 16 > 9 > 4** の方が戦略的では？
-     - 理由：1は全ての役（1-4、1-4-16）の起点となる最重要カード
-     - 4は1がないと役を作れないため、1より優先度が低い
-     - 16と9は大きい数字だが、単体では役を完成させにくい
+#### 1-5. `src/domain/services/cpu/CPUNormalStrategy.ts`
+**変更内容:**
+- [ ] `selectComboByPriority()` メソッドの優先順位配列を修正:
+  - 旧: `[THREE_CARDS, TWO_CARDS_4_9, TWO_CARDS_1_4, CLEARING_YAKU]`
+  - 新: `[THREE_CARDS, TRIPLE_MATCH]`
+- [ ] コメント内の優先順位の説明を更新:
+  - 旧: `THREE_CARDS > TWO_CARDS_4_9 > TWO_CARDS_1_4 > CLEARING_YAKU`
+  - 新: `THREE_CARDS（大役）> TRIPLE_MATCH（小役）`
 
-2. **「役が成立できるなら置く」の実装難易度**
-   - この戦略は「カードを置く前に、役が成立する位置を探す」という先読み能力が必要
-   - Easy実装（置いてから役を確認）よりも複雑な実装になる
-   - 提案：以下のようなアルゴリズムが必要
-     ```
-     1. 手札の各カードについて
-     2. 盤面の空きマス全てをチェック
-     3. 仮置きして役が成立するか検証
-     4. 成立する配置があれば優先順位に従って選択
-     5. なければランダム配置
-     ```
+**理由:** CPU仕様書に記載された新しい優先順位に合わせる
 
-3. **実装の明確化が必要な点**
-   - 複数の配置で同じ役が成立する場合、どれを選ぶ？（ランダム？）
-   - 手札に複数カードがあり、それぞれ異なる役が成立する場合の優先順位は？
-     - 例：手札に1と9がある時、1で「1-4」役、9で「4-9」役が両方成立可能な場合
-     - 提案：役の優先順位（3枚役 > 4-9 > 1-4）で判断
+---
 
-#### 推奨する修正案
+### Phase 2: テストファイルの修正
 
-**成立可能な役がないときのランダム配置優先順位**を以下に変更：
-```
-1. 1をおく（役の起点として最重要）
-2. 16をおく（3枚役の完成に必要）
-3. 9をおく（4-9役の完成に必要）
-4. 4をおく（単体での戦略的価値が最も低い）
-```
+#### 2-1. `src/domain/services/Combo.test.ts`
+**変更内容:**
+- [ ] TWO_CARDS_1_4, TWO_CARDS_4_9 に関するテストケースをすべて削除
+- [ ] CLEARING_YAKU を TRIPLE_MATCH に変更
+- [ ] `getRewardStars()` のテストを更新:
+  - THREE_CARDS → 3
+  - TRIPLE_MATCH → 1
+- [ ] `getDrawCount()` のテストを追加:
+  - THREE_CARDS → 3
+  - TRIPLE_MATCH → 1
 
-**または、より戦略的なアプローチ**：
-- ランダム配置時も「将来の役成立を考慮」する
-- 例：既に盤面に4があるなら、1や9を優先的に配置
-- これによりNormalの戦略性がさらに向上
+**理由:** 役の定義変更に合わせてテストを更新
+
+---
+
+#### 2-2. `src/domain/services/ComboDetector.test.ts`
+**変更内容:**
+- [ ] 2枚役の検出テストをすべて削除
+- [ ] CLEARING_YAKU を TRIPLE_MATCH に変更
+- [ ] `checkCombo()` の2枚役テストを削除
+- [ ] `suggestWinningPlacements()` の2枚役テストを削除
+- [ ] 優先順位テストを更新（THREE_CARDS > TRIPLE_MATCH）
+
+**理由:** 2枚役の検出ロジックが削除されるため
+
+---
+
+#### 2-3. `src/domain/Game.test.ts`
+**変更内容:**
+- [ ] 2枚役の申告テストを削除
+- [ ] CLEARING_YAKU を TRIPLE_MATCH に変更
+- [ ] TRIPLE_MATCH の報酬テストを更新:
+  - 3枚除去 / 1枚ドロー / 星1個
+- [ ] 盤面全クリアのテストを削除（TRIPLE_MATCHは盤面全クリアしない）
+
+**理由:** 役の処理ロジック変更に合わせてテストを更新
+
+---
+
+#### 2-4. `src/domain/services/cpu/CPUEasyStrategy.test.ts`
+**変更内容:**
+- [ ] 2枚役に関するテストケースを削除
+- [ ] CLEARING_YAKU を TRIPLE_MATCH に変更
+- [ ] 優先順位テストを更新（THREE_CARDS > TRIPLE_MATCH）
+
+**理由:** CPU戦略の優先順位変更に合わせてテストを更新
+
+---
+
+#### 2-5. `src/domain/services/cpu/CPUNormalStrategy.test.ts`
+**変更内容:**
+- [ ] 2枚役に関するテストケースを削除
+- [ ] CLEARING_YAKU を TRIPLE_MATCH に変更
+- [ ] 優先順位テストを更新（THREE_CARDS > TRIPLE_MATCH）
+- [ ] `suggestWinningPlacements()` を使った配置戦略のテストを更新
+
+**理由:** CPU戦略の優先順位変更に合わせてテストを更新
+
+---
+
+### Phase 3: UI層の修正
+
+#### 3-1. `src/components/ComboRules/ComboRulesPanel.tsx`
+**変更内容:**
+- [ ] 2枚役の説明を削除
+- [ ] CLEARING_YAKU の説明を TRIPLE_MATCH に変更
+- [ ] TRIPLE_MATCH の報酬を更新:
+  - 旧: 盤面全クリア・報酬なし
+  - 新: 3枚除去 / 1枚ドロー / 星1個
+- [ ] 役のリストを「大役」と「小役」の2つに整理
+
+**理由:** ユーザーに正しいルールを表示するため
+
+---
+
+#### 3-2. `src/components/Commentary/CommentaryArea.tsx`
+**変更内容:**
+- [ ] CLEARING_YAKU の実況メッセージを TRIPLE_MATCH に変更
+- [ ] 2枚役の実況メッセージを削除
+- [ ] 役の名称表示を更新:
+  - 大役: 「1+4+16」
+  - 小役: 「トリプルマッチ」または「同じ数字3枚」
+
+**理由:** ゲーム実況で正しい役名を表示するため
+
+---
+
+#### 3-3. `src/components/Game/GameContainer.tsx`
+**変更内容:**
+- [ ] ComboType の使用箇所を確認し、TWO_CARDS_*, CLEARING_YAKU の参照を削除
+- [ ] 役の表示ロジックを更新（必要に応じて）
+
+**理由:** UIロジック内での役の扱いを統一
+
+---
+
+## 実装の進め方
+
+### ステップ1: ドメイン層の修正（優先度: 高）
+1. Combo.ts を修正（型定義・報酬計算）
+2. ComboDetector.ts を修正（検出ロジック・優先度）
+3. Game.ts を修正（役の処理ロジック）
+4. CPUEasyStrategy.ts を修正（優先順位）
+5. CPUNormalStrategy.ts を修正（優先順位）
+
+### ステップ2: テスト層の修正（優先度: 中）
+6. Combo.test.ts を修正
+7. ComboDetector.test.ts を修正
+8. Game.test.ts を修正
+9. CPUEasyStrategy.test.ts を修正
+10. CPUNormalStrategy.test.ts を修正
+
+### ステップ3: UI層の修正（優先度: 中）
+11. ComboRulesPanel.tsx を修正
+12. CommentaryArea.tsx を修正
+13. GameContainer.tsx を修正
+
+### ステップ4: 最終確認（優先度: 高）
+14. すべてのテストを実行して、パスすることを確認
+15. ゲームを実際にプレイして動作確認
+
+---
+
+## 注意事項
+
+1. **破壊的変更**: ComboTypeの変更は型の破壊的変更となるため、すべての参照箇所を漏れなく修正する必要がある
+2. **後方互換性**: セーブデータや既存のゲーム状態に影響する可能性がある（現時点ではセーブ機能がないため問題なし）
+3. **テストの重要性**: 役の検出ロジックはゲームの核心部分のため、テストを確実に通すことが重要
+4. **UI表示**: プレイヤーに見える役の名称や説明が正しいことを確認
+
+---
+
+## リスクと対策
+
+### リスク1: 2枚役の削除漏れ
+- **影響**: 2枚役が成立してしまう、またはエラーが発生する
+- **対策**: 全ファイルで `TWO_CARDS` を検索し、完全に削除されていることを確認
+
+### リスク2: TRIPLE_MATCHの報酬計算ミス
+- **影響**: ドロー枚数や星の獲得数が間違う
+- **対策**: Game.test.ts でTRIPLE_MATCHの報酬テストを追加し、正しく動作することを確認
+
+### リスク3: CPU優先順位の実装ミス
+- **影響**: CPUが小役を優先してしまう、またはエラーが発生する
+- **対策**: CPUStrategyのテストで優先順位を確認
+
+---
+
+## 見積もり
+
+- **修正ファイル数**: 13ファイル
+- **修正内容**: 型定義の変更、ロジックの削除・修正、テストの更新、UI表示の更新
+- **難易度**: 中程度（型の破壊的変更だが、影響範囲は明確）
+
+## [✓] 要望:CPUの行動仕様書を変えてほしい（完了:2026-02-03）
+- ./docs/spec_ja.md の変更に沿った修正をしてほしい
+
+### 対象:./docs/cpu_easy_spec.md
+- 役の変更に合わせて、表現を修正してほしい（2枚役の廃止、クリア役の小役化)
+- 戦略は基本かえなくてよい、成立してれば大役を優先でよい
+
+### 対象:./docs/cpu_normal_spec.md
+- 役の変更に合わせて、表現を修正してほしい（2枚役の廃止、クリア役の小役化)
+- 戦略は、大役->小役の優先度とし、その他は変えなくてよい
