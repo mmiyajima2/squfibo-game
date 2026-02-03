@@ -45,6 +45,8 @@ export function GameContainer() {
   const [showDifficultyModal, setShowDifficultyModal] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<CPUDifficulty>('Easy');
   const [playerGoesFirst, setPlayerGoesFirst] = useState(true);
+  const [showComboRules, setShowComboRules] = useState(true);
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
 
   const comboDetector = useMemo(() => new ComboDetector(), []);
   const currentPlayer = game.getCurrentPlayer();
@@ -398,6 +400,7 @@ export function GameContainer() {
 
   const handleStartGameWithDifficulty = (difficulty: CPUDifficulty) => {
     setShowDifficultyModal(false);
+    setShowGameOverModal(false);
     resetGame(difficulty, playerGoesFirst);
     clearMessages();
     addMessage(CommentaryBuilder.gameStart());
@@ -545,11 +548,25 @@ export function GameContainer() {
   const winner = game.getWinner();
   const isBoardFull = game.board.isFull();
 
+  // ゲームオーバー時にモーダルを表示
+  useEffect(() => {
+    if (isGameOver) {
+      setShowGameOverModal(true);
+    }
+  }, [isGameOver]);
+
   return (
     <div className="game-container">
-      {isGameOver && (
+      {isGameOver && showGameOverModal && (
         <div className="game-over-modal">
           <div className="game-over-content">
+            <button
+              className="modal-close-button"
+              onClick={() => setShowGameOverModal(false)}
+              aria-label="閉じる"
+            >
+              ×
+            </button>
             <h2>ゲーム終了！</h2>
             {winner ? (
               <p className="winner-text">
@@ -577,6 +594,13 @@ export function GameContainer() {
       {showDifficultyModal && (
         <div className="difficulty-modal">
           <div className="difficulty-modal-content">
+            <button
+              className="modal-close-button"
+              onClick={handleCancelDifficultySelection}
+              aria-label="閉じる"
+            >
+              ×
+            </button>
             <h2>ゲーム設定</h2>
 
             <div className="setting-section">
@@ -703,7 +727,13 @@ export function GameContainer() {
               isGameOver={isGameOver}
               disabled={!hasGameStarted}
             />
-            <ComboRulesPanel />
+            {showComboRules ? (
+              <ComboRulesPanel onClose={() => setShowComboRules(false)} />
+            ) : (
+              <button className="show-rules-button" onClick={() => setShowComboRules(true)}>
+                役のルールを表示
+              </button>
+            )}
           </div>
         </div>
 

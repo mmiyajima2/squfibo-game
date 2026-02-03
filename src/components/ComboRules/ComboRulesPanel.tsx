@@ -1,6 +1,15 @@
-export function ComboRulesPanel() {
+interface ComboRulesPanelProps {
+  onClose?: () => void;
+}
+
+export function ComboRulesPanel({ onClose }: ComboRulesPanelProps = {}) {
   return (
     <div className="combo-rules-panel">
+      {onClose && (
+        <button className="combo-rules-close-button" onClick={onClose} aria-label="閉じる">
+          ×
+        </button>
+      )}
       <div className="combo-rules-title">★ 役のつくりかた ★</div>
 
       <div className="combo-rules-subtitle">【大役】</div>

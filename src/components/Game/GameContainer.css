@@ -157,6 +157,7 @@
   text-align: center;
   max-width: 500px;
   animation: slideUp 0.4s ease;
+  position: relative;
 }
 
 .game-over-content h2 {
@@ -264,6 +265,7 @@
   text-align: center;
   max-width: 500px;
   animation: slideUp 0.4s ease;
+  position: relative;
 }
 
 .difficulty-modal-content h2 {
@@ -420,4 +422,54 @@
   .game-title {
     font-size: 22px;
   }
+}
+
+/* Modal Close Button (共通スタイル) */
+.modal-close-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.modal-close-button:hover {
+  color: #475569;
+  background: #f1f5f9;
+  transform: scale(1.1);
+}
+
+/* Show Rules Button */
+.show-rules-button {
+  padding: 12px 20px;
+  background: #fffef7;
+  color: #d4a017;
+  border: 2px solid #e0d5b7;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 280px;
+  max-width: 320px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.show-rules-button:hover {
+  background: #fff9e6;
+  border-color: #d4a017;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
