@@ -103,6 +103,26 @@ npm run build
 npm run preview
 ```
 
+### Google Analytics の設定（オプション）
+
+アクセス解析のために Google Analytics を設定できます。
+
+1. `.env` ファイルを作成（`.env.example` をコピー）
+2. Google Analytics で測定 ID（G-XXXXXXXXXX）を取得
+3. `.env` ファイルに測定 ID を設定
+
+```bash
+# .env
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+**注意**: `.env` ファイルは `.gitignore` に含まれており、Git にコミットされません。
+
+開発環境でも Google Analytics を有効にしたい場合：
+```bash
+VITE_GA_ENABLE_IN_DEV=true
+```
+
 ## プロジェクト構成
 
 ```
