@@ -26,11 +26,14 @@ export class CPUEasyStrategy implements CPUStrategy {
     const steps: CPUActionStep[] = [];
     let missedCombo: Combo | null = null;
     let removedPosition: Position | undefined;
+    let removedCard: Card | null = null;
 
     // ステップ1（オプション）: 盤面満杯の場合、ランダムに1枚除去
     if (game.board.isFull()) {
       const excludePosition = game.getLastPlacedPosition();
       removedPosition = this.selectRandomOccupiedPosition(game, excludePosition);
+      // planTurnでは一時的に除去（シミュレーション用）
+      removedCard = game.board.removeCard(removedPosition);
       steps.push({ type: 'REMOVE_CARD', position: removedPosition });
     }
 
@@ -57,6 +60,11 @@ export class CPUEasyStrategy implements CPUStrategy {
     game.board.placeCard(placedCard, position);
     const detectedCombos = this.comboDetector.detectCombos(game.board, position);
     game.board.removeCard(position);
+
+    // 除去したカードを元に戻す（planTurnはゲーム状態を変更しないため）
+    if (removedCard && removedPosition) {
+      game.board.placeCard(removedCard, removedPosition);
+    }
 
     // ステップ4: 役の申告判定
     const { claimedCombo, missedCombo: missed } = this.decideCombo(detectedCombos);
