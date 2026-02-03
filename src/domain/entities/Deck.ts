@@ -31,10 +31,10 @@ export class Deck {
   static createInitialDeck(): Deck {
     const cards: Card[] = [];
     const cardConfig = [
-      { value: 1, count: 5 },
-      { value: 4, count: 5 },
-      { value: 9, count: 8 },
-      { value: 16, count: 5 },
+      { value: 1, count: 4 },
+      { value: 4, count: 4 },
+      { value: 9, count: 9 },
+      { value: 16, count: 4 },
     ];
     const colors = [CardColor.RED, CardColor.BLUE];
 

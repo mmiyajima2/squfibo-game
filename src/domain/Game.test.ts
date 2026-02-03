@@ -18,17 +18,17 @@ describe('Game', () => {
       expect(game.board).toBeDefined();
       expect(game.deck).toBeDefined();
       expect(game.players.length).toBe(2);
-      expect(game.getTotalStars()).toBe(34);
+      expect(game.getTotalStars()).toBe(21);
       expect(game.getGameState()).toBe(GameState.PLAYING);
     });
 
-    it('should deal 13 cards to each player', () => {
-      expect(game.players[0].hand.getCardCount()).toBe(13);
-      expect(game.players[1].hand.getCardCount()).toBe(13);
+    it('should deal 8 cards to each player', () => {
+      expect(game.players[0].hand.getCardCount()).toBe(8);
+      expect(game.players[1].hand.getCardCount()).toBe(8);
     });
 
-    it('should have 20 cards remaining in deck after dealing', () => {
-      expect(game.deck.getCardCount()).toBe(20);
+    it('should have 26 cards remaining in deck after dealing', () => {
+      expect(game.deck.getCardCount()).toBe(26);
     });
 
     it('should start with player 1', () => {
@@ -174,7 +174,7 @@ describe('Game', () => {
       game.claimCombo(combo);
 
       expect(currentPlayer.stars).toBe(initialStars + 3);
-      expect(game.getTotalStars()).toBe(31);
+      expect(game.getTotalStars()).toBe(18);
     });
 
     it('should remove cards from board when claiming TRIPLE_MATCH', () => {
@@ -239,7 +239,7 @@ describe('Game', () => {
       game.claimCombo(combo);
 
       expect(currentPlayer.stars).toBe(initialStars + 1);
-      expect(game.getTotalStars()).toBe(33);
+      expect(game.getTotalStars()).toBe(20);
     });
 
     it('should handle combo when deck is empty', () => {
@@ -271,8 +271,8 @@ describe('Game', () => {
     it('should handle combo when not enough stars available', () => {
       const currentPlayer = game.getCurrentPlayer();
 
-      // 星を31個まで使い切る（残り3個）
-      for (let i = 0; i < 31; i++) {
+      // 星を18個まで使い切る（残り3個）
+      for (let i = 0; i < 18; i++) {
         const card = new Card(CardValue.of(1), CardColor.RED);
         const card2 = new Card(CardValue.of(1), CardColor.RED);
         const card3 = new Card(CardValue.of(1), CardColor.RED);
@@ -354,8 +354,8 @@ describe('Game', () => {
     });
 
     it('should finish game when all stars are claimed', () => {
-      // 星を34個使い切る（TRIPLE_MATCHで1個ずつ×34回）
-      for (let i = 0; i < 34; i++) {
+      // 星を21個使い切る（TRIPLE_MATCHで1個ずつ×21回）
+      for (let i = 0; i < 21; i++) {
         const card = new Card(CardValue.of(1), CardColor.RED);
         const card2 = new Card(CardValue.of(1), CardColor.RED);
         const card3 = new Card(CardValue.of(1), CardColor.RED);

@@ -35,7 +35,7 @@ export class Game {
     const player1 = new Player('player1');
     const player2 = new Player('player2', cpuDifficulty);
 
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 8; i++) {
       const card1 = deck.draw();
       const card2 = deck.draw();
       if (card1) player1.drawToHand(card1);
@@ -47,7 +47,7 @@ export class Game {
       deck,
       [player1, player2],
       playerGoesFirst ? 0 : 1,
-      34,
+      21,
       [],
       GameState.PLAYING,
       cpuDifficulty || 'Easy'
