@@ -44,7 +44,7 @@ export function HandArea({
         {cards.length === 0 ? (
           <div className="hand-empty">手札なし</div>
         ) : hideCardDetails ? (
-          cards.map((card, index) => (
+          cards.map((_, index) => (
             <div key={`hidden-${index}`} className="hand-card-hidden" />
           ))
         ) : (

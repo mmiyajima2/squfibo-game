@@ -96,15 +96,16 @@ describe('CPUEasyStrategy', () => {
         const game = Game.createNewGame('Easy', true);
         const strategy = new CPUEasyStrategy();
 
-        // 人間が赤1を配置
+        // 人間が赤1と赤4を配置
         game.placeCard(new Card(CardValue.of(1), CardColor.RED), Position.of(0, 0));
+        game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 1));
         game.endTurn();
 
-        // CPUの手札をクリアして赤4のみにする
+        // CPUの手札をクリアして赤16のみにする
         const cpuPlayer = game.getCurrentPlayer();
         const currentCards = cpuPlayer.hand.getCards();
         currentCards.forEach(card => cpuPlayer.playCard(card));
-        cpuPlayer.hand.addCard(new Card(CardValue.of(4), CardColor.RED));
+        cpuPlayer.hand.addCard(new Card(CardValue.of(16), CardColor.RED));
 
         const result = strategy.executeTurn(game);
 

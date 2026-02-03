@@ -7,7 +7,7 @@ export interface PlacementSuggestion {
   card: Card;           // 手札のどのカードを
   position: Position;   // どの位置に置くか
   expectedCombo: Combo; // 成立する役
-  priority: number;     // 優先度（3=3枚役, 2=4-9, 1=1-4, 0=盤面クリア）
+  priority: number;     // 優先度（3=大役THREE_CARDS, 1=小役TRIPLE_MATCH）
 }
 
 export class ComboDetector {
@@ -26,14 +26,6 @@ export class ComboDetector {
       }
     }
 
-    const twoCardCombos = this.findTwoCardCombos(
-      board,
-      lastCard,
-      lastPlacedPosition,
-      allPositions
-    );
-    combos.push(...twoCardCombos);
-
     const threeCardCombos = this.findThreeCardCombos(
       board,
       lastCard,
@@ -42,59 +34,13 @@ export class ComboDetector {
     );
     combos.push(...threeCardCombos);
 
-    const clearingYaku = this.findClearingYaku(
+    const tripleMatch = this.findTripleMatch(
       board,
       lastCard,
       lastPlacedPosition,
       allPositions
     );
-    combos.push(...clearingYaku);
-
-    return combos;
-  }
-
-  private findTwoCardCombos(
-    board: Board,
-    lastCard: Card,
-    lastPlacedPosition: Position,
-    allPositions: Position[]
-  ): Combo[] {
-    const combos: Combo[] = [];
-    const lastValue = lastCard.value.value;
-
-    for (const pos of allPositions) {
-      if (pos.equals(lastPlacedPosition)) {
-        continue;
-      }
-
-      const card = board.getCard(pos);
-      if (!card || !card.isSameColor(lastCard)) {
-        continue;
-      }
-
-      // 2枚役は縦または横に隣接している必要がある
-      if (!this.areAdjacentTwoCards([lastPlacedPosition, pos])) {
-        continue;
-      }
-
-      const value = card.value.value;
-
-      if (
-        (lastValue === 1 && value === 4) ||
-        (lastValue === 4 && value === 1)
-      ) {
-        combos.push(
-          new Combo(ComboType.TWO_CARDS_1_4, [lastCard, card], [lastPlacedPosition, pos])
-        );
-      } else if (
-        (lastValue === 4 && value === 9) ||
-        (lastValue === 9 && value === 4)
-      ) {
-        combos.push(
-          new Combo(ComboType.TWO_CARDS_4_9, [lastCard, card], [lastPlacedPosition, pos])
-        );
-      }
-    }
+    combos.push(...tripleMatch);
 
     return combos;
   }
@@ -143,7 +89,7 @@ export class ComboDetector {
     return combos;
   }
 
-  private findClearingYaku(
+  private findTripleMatch(
     board: Board,
     lastCard: Card,
     lastPlacedPosition: Position,
@@ -173,7 +119,7 @@ export class ComboDetector {
           if (this.areAdjacentThreeCards([lastPlacedPosition, pos1, pos2])) {
             combos.push(
               new Combo(
-                ComboType.CLEARING_YAKU,
+                ComboType.TRIPLE_MATCH,
                 [lastCard, card1, card2],
                 [lastPlacedPosition, pos1, pos2]
               )
@@ -202,20 +148,6 @@ export class ComboDetector {
 
     const values = cards.map(card => card.value.value).sort((a, b) => a - b);
 
-    if (values.length === 2) {
-      // 2枚役の場合、位置が縦または横に隣接している必要がある
-      if (!this.areAdjacentTwoCards(positions)) {
-        return null;
-      }
-
-      if (values[0] === 1 && values[1] === 4) {
-        return ComboType.TWO_CARDS_1_4;
-      }
-      if (values[0] === 4 && values[1] === 9) {
-        return ComboType.TWO_CARDS_4_9;
-      }
-    }
-
     if (values.length === 3) {
       // 3枚役の場合、位置が連なっている必要がある（縦3つ、横3つ、またはL字型）
       if (!this.areAdjacentThreeCards(positions)) {
@@ -226,9 +158,9 @@ export class ComboDetector {
         return ComboType.THREE_CARDS;
       }
 
-      // Check for clearing yaku: all three cards have the same value
+      // Check for triple match: all three cards have the same value
       if (values[0] === values[1] && values[1] === values[2]) {
-        return ComboType.CLEARING_YAKU;
+        return ComboType.TRIPLE_MATCH;
       }
     }
 
@@ -341,13 +273,9 @@ export class ComboDetector {
   private getComboTypePriority(type: ComboType): number {
     switch (type) {
       case ComboType.THREE_CARDS:
-        return 3; // 3つ星獲得
-      case ComboType.TWO_CARDS_4_9:
-        return 2; // 2つ星獲得（1-4より強い組み合わせ）
-      case ComboType.TWO_CARDS_1_4:
-        return 1; // 2つ星獲得
-      case ComboType.CLEARING_YAKU:
-        return 0; // 最下位（星の獲得ができない）
+        return 3; // 大役：3つ星獲得
+      case ComboType.TRIPLE_MATCH:
+        return 1; // 小役：1つ星獲得
       default:
         return 0;
     }

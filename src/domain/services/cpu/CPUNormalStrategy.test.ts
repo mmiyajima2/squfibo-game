@@ -8,8 +8,8 @@ import { Position } from '../../valueObjects/Position';
 import { ComboType } from '../Combo';
 
 describe('CPUNormalStrategy', () => {
-  describe('バグ修正: 役の申告が正しく行われる', () => {
-    it('赤4が盤面にあり、CPUが赤1を持っている場合、1-4の役を成立させて申告する', () => {
+  describe('戦略的配置: THREE_CARDSを成立させる', () => {
+    it('赤1と赤4が盤面にあり、CPUが赤16を持っている場合、THREE_CARDSを成立させて申告する', () => {
       // 見落とし率5%を考慮して複数回テスト
       let claimedCount = 0;
       const iterations = 20;
@@ -18,84 +18,25 @@ describe('CPUNormalStrategy', () => {
         const game = Game.createNewGame('Normal', true); // 人間が先攻
         const strategy = new CPUNormalStrategy();
 
-        // 人間プレイヤーが赤4を左上(0,0)に配置
-        const humanCard = new Card(CardValue.of(4), CardColor.RED);
-        game.placeCard(humanCard, Position.of(0, 0));
+        // 人間プレイヤーが赤1と赤4を配置
+        game.placeCard(new Card(CardValue.of(1), CardColor.RED), Position.of(0, 0));
+        game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 1));
         game.endTurn();
 
-        // CPUの手札をクリアして赤1のみにする
+        // CPUの手札をクリアして赤16のみにする
         const cpuPlayer = game.getCurrentPlayer();
         const currentCards = cpuPlayer.hand.getCards();
         currentCards.forEach(card => cpuPlayer.playCard(card));
-        cpuPlayer.hand.addCard(new Card(CardValue.of(1), CardColor.RED));
+        cpuPlayer.hand.addCard(new Card(CardValue.of(16), CardColor.RED));
 
         // CPUのターンを実行
         const result = strategy.executeTurn(game);
 
-        // 赤1が配置されたか確認
-        if (result.placedCard.value.value === 1 && result.placedCard.color === CardColor.RED) {
-          // 赤4と面で接する位置に配置されたか確認
-          const placedPos = result.position;
-          const redCardPos = Position.of(0, 0);
-
-          const isAdjacent =
-            (Math.abs(placedPos.row - redCardPos.row) === 1 && placedPos.col === redCardPos.col) ||
-            (Math.abs(placedPos.col - redCardPos.col) === 1 && placedPos.row === redCardPos.row);
-
-          if (isAdjacent) {
-            // 1-4の役が申告されたか確認（見落としでない場合）
-            if (result.claimedCombo) {
-              expect(result.claimedCombo.type).toBe(ComboType.TWO_CARDS_1_4);
-              claimedCount++;
-            }
-          }
-        }
-      }
-
-      // 見落とし率5%を考慮すると、80%以上で申告されるはず
-      // iterations=20なら、少なくとも16回以上は申告されるべき
-      expect(claimedCount).toBeGreaterThanOrEqual(iterations * 0.8);
-    });
-
-    it('赤4が盤面にあり、CPUが赤9を持っている場合、4-9の役を成立させて申告する', () => {
-      // 見落とし率5%を考慮して複数回テスト
-      let claimedCount = 0;
-      const iterations = 20;
-
-      for (let i = 0; i < iterations; i++) {
-        const game = Game.createNewGame('Normal', true); // 人間が先攻
-        const strategy = new CPUNormalStrategy();
-
-        // 人間プレイヤーが赤4を左上(0,0)に配置
-        const humanCard = new Card(CardValue.of(4), CardColor.RED);
-        game.placeCard(humanCard, Position.of(0, 0));
-        game.endTurn();
-
-        // CPUの手札をクリアして赤9のみにする
-        const cpuPlayer = game.getCurrentPlayer();
-        const currentCards = cpuPlayer.hand.getCards();
-        currentCards.forEach(card => cpuPlayer.playCard(card));
-        cpuPlayer.hand.addCard(new Card(CardValue.of(9), CardColor.RED));
-
-        // CPUのターンを実行
-        const result = strategy.executeTurn(game);
-
-        // 赤9が配置されたか確認
-        if (result.placedCard.value.value === 9 && result.placedCard.color === CardColor.RED) {
-          // 赤4と面で接する位置に配置されたか確認
-          const placedPos = result.position;
-          const redCardPos = Position.of(0, 0);
-
-          const isAdjacent =
-            (Math.abs(placedPos.row - redCardPos.row) === 1 && placedPos.col === redCardPos.col) ||
-            (Math.abs(placedPos.col - redCardPos.col) === 1 && placedPos.row === redCardPos.row);
-
-          if (isAdjacent) {
-            // 4-9の役が申告されたか確認（見落としでない場合）
-            if (result.claimedCombo) {
-              expect(result.claimedCombo.type).toBe(ComboType.TWO_CARDS_4_9);
-              claimedCount++;
-            }
+        // 赤16が配置され、THREE_CARDSが申告されるはず（見落としでない場合）
+        if (result.placedCard.value.value === 16 && result.placedCard.color === CardColor.RED) {
+          if (result.claimedCombo) {
+            expect(result.claimedCombo.type).toBe(ComboType.THREE_CARDS);
+            claimedCount++;
           }
         }
       }
@@ -105,32 +46,69 @@ describe('CPUNormalStrategy', () => {
     });
   });
 
-  describe('戦略的配置', () => {
-    it('役が成立する配置を優先的に選択する', () => {
+  describe('戦略的配置: TRIPLE_MATCHを成立させる', () => {
+    it('赤4が2枚盤面にあり、CPUが赤4を持っている場合、TRIPLE_MATCHを成立させて申告する', () => {
+      // 見落とし率5%を考慮して複数回テスト
+      let claimedCount = 0;
+      const iterations = 20;
+
+      for (let i = 0; i < iterations; i++) {
+        const game = Game.createNewGame('Normal', true); // 人間が先攻
+        const strategy = new CPUNormalStrategy();
+
+        // 人間プレイヤーが赤4を2枚配置
+        game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 0));
+        game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 1));
+        game.endTurn();
+
+        // CPUの手札をクリアして赤4のみにする
+        const cpuPlayer = game.getCurrentPlayer();
+        const currentCards = cpuPlayer.hand.getCards();
+        currentCards.forEach(card => cpuPlayer.playCard(card));
+        cpuPlayer.hand.addCard(new Card(CardValue.of(4), CardColor.RED));
+
+        // CPUのターンを実行
+        const result = strategy.executeTurn(game);
+
+        // 赤4が配置され、TRIPLE_MATCHが申告されるはず（見落としでない場合）
+        if (result.placedCard.value.value === 4 && result.placedCard.color === CardColor.RED) {
+          if (result.claimedCombo) {
+            expect(result.claimedCombo.type).toBe(ComboType.TRIPLE_MATCH);
+            claimedCount++;
+          }
+        }
+      }
+
+      // 見落とし率5%を考慮すると、80%以上で申告されるはず
+      expect(claimedCount).toBeGreaterThanOrEqual(iterations * 0.8);
+    });
+  });
+
+  describe('役の優先順位', () => {
+    it('THREE_CARDS > TRIPLE_MATCHの順で役を申告する', () => {
       const game = Game.createNewGame('Normal', true);
       const strategy = new CPUNormalStrategy();
 
-      // 盤面に赤1と赤4を配置（1-4-16の3枚役が成立可能）
+      // 盤面に赤1、赤4を2枚配置（THREE_CARDSとTRIPLE_MATCHの両方が成立可能）
       game.placeCard(new Card(CardValue.of(1), CardColor.RED), Position.of(0, 0));
       game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 1));
+      game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(1, 0));
       game.endTurn();
 
-      // CPUの手札をクリアして、テスト用のカードを追加
+      // CPUの手札をクリアして赤16と赤4を追加
+      // 赤16で(0,2)または(1,1)に置くとTHREE_CARDSが成立
+      // 赤4で(1,1)に置くとTRIPLE_MATCHが成立
       const cpuPlayer = game.getCurrentPlayer();
       const currentCards = cpuPlayer.hand.getCards();
       currentCards.forEach(card => cpuPlayer.playCard(card));
       cpuPlayer.hand.addCard(new Card(CardValue.of(16), CardColor.RED));
-      cpuPlayer.hand.addCard(new Card(CardValue.of(9), CardColor.BLUE));
+      cpuPlayer.hand.addCard(new Card(CardValue.of(4), CardColor.RED));
 
-      // CPUのターンを実行
       const result = strategy.executeTurn(game);
 
-      // 赤16が配置され、THREE_CARDSが申告されるはず（見落としがなければ）
-      if (result.placedCard.value.value === 16 && result.placedCard.color === CardColor.RED) {
-        // 見落としでなければTHREE_CARDSが申告される
-        if (result.claimedCombo) {
-          expect(result.claimedCombo.type).toBe(ComboType.THREE_CARDS);
-        }
+      // THREE_CARDSが優先されるため、赤16が配置されるはず
+      if (result.claimedCombo) {
+        expect(result.claimedCombo.type).toBe(ComboType.THREE_CARDS);
       }
     });
   });
@@ -145,15 +123,16 @@ describe('CPUNormalStrategy', () => {
         const game = Game.createNewGame('Normal', true);
         const strategy = new CPUNormalStrategy();
 
-        // 人間が赤4を配置
-        game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 0));
+        // 人間が赤1と赤4を配置
+        game.placeCard(new Card(CardValue.of(1), CardColor.RED), Position.of(0, 0));
+        game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 1));
         game.endTurn();
 
-        // CPUの手札をクリアして赤1のみにする
+        // CPUの手札をクリアして赤16のみにする
         const cpuPlayer = game.getCurrentPlayer();
         const currentCards = cpuPlayer.hand.getCards();
         currentCards.forEach(card => cpuPlayer.playCard(card));
-        cpuPlayer.hand.addCard(new Card(CardValue.of(1), CardColor.RED));
+        cpuPlayer.hand.addCard(new Card(CardValue.of(16), CardColor.RED));
 
         const result = strategy.executeTurn(game);
 
@@ -218,32 +197,6 @@ describe('CPUNormalStrategy', () => {
 
       // 16が優先的に配置されるはず
       expect(result.placedCard.value.value).toBe(16);
-    });
-  });
-
-  describe('役の優先順位', () => {
-    it('THREE_CARDS > TWO_CARDS_4_9 > TWO_CARDS_1_4の順で役を申告する', () => {
-      const game = Game.createNewGame('Normal', true);
-      const strategy = new CPUNormalStrategy();
-
-      // 盤面に赤1、赤4、赤9を配置（1-4と4-9の両方が成立可能）
-      game.placeCard(new Card(CardValue.of(1), CardColor.RED), Position.of(0, 0));
-      game.placeCard(new Card(CardValue.of(4), CardColor.RED), Position.of(0, 1));
-      game.placeCard(new Card(CardValue.of(9), CardColor.RED), Position.of(1, 1));
-      game.endTurn();
-
-      // CPUの手札をクリアして赤16を追加（THREE_CARDSが成立）
-      const cpuPlayer = game.getCurrentPlayer();
-      const currentCards = cpuPlayer.hand.getCards();
-      currentCards.forEach(card => cpuPlayer.playCard(card));
-      cpuPlayer.hand.addCard(new Card(CardValue.of(16), CardColor.RED));
-
-      const result = strategy.executeTurn(game);
-
-      // THREE_CARDSが申告されるはず（見落としがなければ）
-      if (result.claimedCombo) {
-        expect(result.claimedCombo.type).toBe(ComboType.THREE_CARDS);
-      }
     });
   });
 });

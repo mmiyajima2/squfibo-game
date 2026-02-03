@@ -255,7 +255,7 @@ export class CPUNormalStrategy implements CPUStrategy {
    * 2. 5%の確率（1/20）で見落とす
    *
    * 【優先順位】
-   * THREE_CARDS > TWO_CARDS_4_9 > TWO_CARDS_1_4 > CLEARING_YAKU
+   * THREE_CARDS（大役）> TRIPLE_MATCH（小役）
    *
    * @param detectedCombos 検出された役のリスト
    * @returns 申告する役と見落とした役
@@ -288,9 +288,7 @@ export class CPUNormalStrategy implements CPUStrategy {
   private selectComboByPriority(combos: Combo[]): Combo {
     const priority = [
       ComboType.THREE_CARDS,
-      ComboType.TWO_CARDS_4_9,
-      ComboType.TWO_CARDS_1_4,
-      ComboType.CLEARING_YAKU,
+      ComboType.TRIPLE_MATCH,
     ];
 
     for (const type of priority) {
