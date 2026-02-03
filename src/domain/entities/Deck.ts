@@ -30,12 +30,17 @@ export class Deck {
 
   static createInitialDeck(): Deck {
     const cards: Card[] = [];
-    const values = [1, 4, 9, 16];
+    const cardConfig = [
+      { value: 1, count: 5 },
+      { value: 4, count: 5 },
+      { value: 9, count: 8 },
+      { value: 16, count: 5 },
+    ];
     const colors = [CardColor.RED, CardColor.BLUE];
 
-    for (const value of values) {
+    for (const { value, count } of cardConfig) {
       for (const color of colors) {
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < count; i++) {
           cards.push(new Card(CardValue.of(value), color));
         }
       }

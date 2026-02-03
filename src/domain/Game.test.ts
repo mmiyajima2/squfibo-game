@@ -27,8 +27,8 @@ describe('Game', () => {
       expect(game.players[1].hand.getCardCount()).toBe(13);
     });
 
-    it('should have 38 cards remaining in deck after dealing', () => {
-      expect(game.deck.getCardCount()).toBe(38);
+    it('should have 20 cards remaining in deck after dealing', () => {
+      expect(game.deck.getCardCount()).toBe(20);
     });
 
     it('should start with player 1', () => {
