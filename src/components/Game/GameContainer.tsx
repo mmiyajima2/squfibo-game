@@ -662,6 +662,14 @@ export function GameContainer() {
       )}
       <div className="game-header">
         <h1 className="game-title">SquFibo（すくふぃぼ）</h1>
+        <a
+          href="https://squfibo-online.buntozu.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="online-link"
+        >
+          オンライン対戦版
+        </a>
         <button className="reset-button" onClick={handleResetGame}>
           新しいゲーム
         </button>
