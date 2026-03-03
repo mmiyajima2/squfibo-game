@@ -1,5 +1,19 @@
 # タスク
 
+## [✓] 要望: CPUのハードモードを実装してほしい（完了:2026-03-03）
+* ノーマルとほぼおなじでよい
+* 違いは、見落とし率のみで、見落としなしとする
+
+**実装完了**: 2026-03-03
+- `src/domain/services/cpu/CPUHardStrategy.ts` を新規作成
+  - Normalと同じ戦略的配置ロジック（役成立を狙った配置、16 > 9 > 1 > 4の優先順位）
+  - 見落とし率0%（役が成立した場合は必ず申告）
+- `src/types/CPUDifficulty.ts` でHardを有効化（`Hard: false` → `Hard: true`）
+- `src/domain/services/cpu/CPUStrategyFactory.ts` にHard戦略を登録
+- `src/domain/services/cpu/index.ts` にエクスポート追加
+- `src/domain/services/cpu/CPUHardStrategy.test.ts` を新規作成（5テスト全てパス）
+- ビルド成功: 型エラーなし
+
 ## [✓] 要望: 「SquFiboオンライン対戦版」のリンクが欲しい（完了:2026-02-21）
 - URLは、https://squfibo-online.buntozu.com/
 - ゲームプレーをじゃましない適当な位置に配置してほしい
