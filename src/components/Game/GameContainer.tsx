@@ -391,6 +391,7 @@ export function GameContainer() {
 
     endTurn();
     clearPlacementHistory();
+    clearBoardCardSelection();
     selectCard(null);
   };
 
