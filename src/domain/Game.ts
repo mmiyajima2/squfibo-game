@@ -150,9 +150,12 @@ export class Game {
 
   endTurn(): void {
     // ゲーム終了判定
-    // 1. 全ての星が配布された
-    // 2. 山札が空
-    if (this.totalStars === 0 || this.deck.isEmpty()) {
+    // 1. いずれかのプレイヤーが星を過半数（11個以上）獲得した
+    // 2. 全ての星が配布された
+    // 3. 山札が空
+    const WINNING_THRESHOLD = 11; // 21個中の過半数
+    const majorityReached = this.players.some(p => p.stars >= WINNING_THRESHOLD);
+    if (majorityReached || this.totalStars === 0 || this.deck.isEmpty()) {
       this.gameState = GameState.FINISHED;
     }
 
