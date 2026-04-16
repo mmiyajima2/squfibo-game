@@ -382,6 +382,28 @@ describe('Game', () => {
       expect(game.getWinner()).toBeNull();
     });
 
+    it('should finish game when player1 reaches majority stars (11)', () => {
+      game.players[0].addStars(11);
+      expect(game.isGameOver()).toBe(false); // endTurn前は終了しない
+      game.endTurn();
+      expect(game.isGameOver()).toBe(true);
+      expect(game.getWinner()).toBe(game.players[0]);
+    });
+
+    it('should finish game when player2 reaches majority stars (11)', () => {
+      game.players[1].addStars(11);
+      game.endTurn();
+      expect(game.isGameOver()).toBe(true);
+      expect(game.getWinner()).toBe(game.players[1]);
+    });
+
+    it('should not finish game when a player has exactly 10 stars', () => {
+      game.players[0].addStars(10);
+      game.endTurn();
+      // 山札もまだあるので終了しない
+      expect(game.isGameOver()).toBe(false);
+    });
+
     it('should determine winner by stars', () => {
       game.players[0].addStars(10);
       game.players[1].addStars(5);
